@@ -1,0 +1,17 @@
+# YOLOv8 Configuration for MoodPlay (COCO-safe labels)
+model_path: "models/checkpoints/yolo/yolov8n.pt"
+device: "cuda"
+conf_threshold: 0.25
+iou_threshold: 0.6
+target_labels:
+  - "person"
+  - "tie"
+  - "handbag"
+  - "backpack"
+  - "umbrella"
+  - "suitcase"
+label_aliases: {}
+mask_refine:
+  box_pad_ratio: 0.06
+  min_area: 32
+  morph_kernel: 3

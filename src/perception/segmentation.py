@@ -1,84 +1,582 @@
-import os
+"""
+MoodPlay Video Colorizer - Preprocessing & Segmentation Pipeline
+
+Sequential model swapping:
+  Phase A: YOLO + SAM2 keyframe masks -> unload
+  Phase B: CoTracker tracking -> unload
+  Phase C: SAM2 final per-frame masks -> unload
+"""
+from __future__ import annotations
+
+import gc
+import json
+import shutil
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional
+
 import cv2
 import numpy as np
-from typing import Callable, Dict, List
+import torch
+import yaml
 
-# YOLO Detector Wrapper
-class YoloDetector:
-    def __init__(self, model_path: str, device: str = 'cpu'):
-        if not os.path.exists(model_path):
-            raise RuntimeError(f "Model path {model_path} does not exist!")
-        self.model = self.load_model(model_path, device)
+from .yolo_detector import YoloV8Detector
+from .sam_segmenter import Sam2Masker
+from .cotracker_wrapper import CoTrackerPersistentTracker
 
-    def load_model(self, model_path: str, device: str):
-        # Assume ultralytics.YOLO for loading the model
-        from ultralytics import YOLO
-        return YOLO(model_path).to(device)
 
-    def detect(self, frame: np.ndarray) -> List[Dict]:
-        results = self.model(frame)
-        return results.xyxy[0].cpu().numpy()  # Assuming COCO format
+@dataclass
+class Instance:
+    instance_id: int
+    label: str
+    first_frame: int
+    last_frame: int
+    keyframes: List[str] = field(default_factory=list)
+    keyframe_indices: List[int] = field(default_factory=list)
+    bboxes: Dict[int, List[float]] = field(default_factory=dict)
+    centroids: Dict[int, List[float]] = field(default_factory=dict)
+    mask_paths: Dict[int, str] = field(default_factory=dict)
 
-# CoTracker Wrapper
-class CoTracker:
-    def __init__(self, model_path: str):
-        self.model_path = model_path
-        self.trackers = self.load_trackers()
 
-    def load_trackers(self):
-        # Load your CoTracker model here
-        pass  # Placeholder
+def _noop_progress(current: int, total: int, message: str) -> None:
+    return
 
-    def update(self, detections: List[Dict]) -> List[int]:
-        # Update tracking logic and return instance IDs
-        pass  # Placeholder
 
-# SAM2 Segmenter Wrapper
-class Sam2Segmenter:
-    def __init__(self, model_path: str):
-        self.model_path = model_path
-        # Load SAM2 model
-        pass  # Placeholder
+def _clear_gpu() -> None:
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        try:
+            torch.cuda.ipc_collect()
+        except Exception:
+            pass
 
-    def segment(self, frame: np.ndarray, boxes: np.ndarray) -> List[np.ndarray]:
-        # Perform segmentation based on boxes
-        pass  # Placeholder
 
-# Main Video Processing Function
-def video_processing_pipeline(video_path: str, progress_callback: Callable[[str], None]) -> Dict:
-    extracted_frame_dir = 'data/extracted_frames'
-    mask_dir = 'data/intermediate/masks'
-    os.makedirs(extracted_frame_dir, exist_ok=True)
-    os.makedirs(mask_dir, exist_ok=True)
+def _mkdir(path: Path, clean: bool = False) -> None:
+    if clean and path.exists():
+        shutil.rmtree(path, ignore_errors=True)
+    path.mkdir(parents=True, exist_ok=True)
 
-    cap = cv2.VideoCapture(video_path)
-    if not cap.isOpened():
-        raise RuntimeError(f "Cannot open video {video_path}")
 
-    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    detector = YoloDetector('path/to/yolo_model.pt')
-    tracker = CoTracker('path/to/cotracker_model.pt')
-    segmenter = Sam2Segmenter('path/to/sam2_model.pt')
+def _frame_name(idx: int) -> str:
+    return f"frame_{idx:06d}.png"
 
-    tracked_instances = {}
-    for frame_idx in range(frame_count):
-        ret, frame = cap.read()
-        if not ret:
-            break
-        progress_callback(f "Processing frame {frame_idx + 1}/{frame_count}")
-        cv2.imwrite(os.path.join(extracted_frame_dir, f "frame_{frame_idx}.png"), frame)
 
-        detections = detector.detect(frame)
-        instance_ids = tracker.update(detections)
-        masks = segmenter.segment(frame, detections)
+def _resize_keep_aspect(frame: np.ndarray, max_h: int) -> tuple[np.ndarray, float]:
+    h, w = frame.shape[:2]
+    if h <= max_h:
+        return frame, 1.0
+    scale = max_h / float(h)
+    new_w = int(round(w * scale))
+    resized = cv2.resize(frame, (new_w, max_h), interpolation=cv2.INTER_AREA)
+    return resized, scale
 
-        for instance_id in instance_ids:
-            tracked_instances[instance_id] = {"id": instance_id, "keyframe_paths": [], "metadata": {}}  # Update this structure as necessary
 
-        # Save masks
-        for id_mask in masks:
-            # Save masks to disk logic here
-            pass  # Placeholder
+def _save_mask(mask: np.ndarray, png_path: Path, save_npy: bool = False) -> str:
+    png_path.parent.mkdir(parents=True, exist_ok=True)
+    cv2.imwrite(str(png_path), (mask > 0).astype(np.uint8) * 255)
+    if save_npy:
+        np.save(str(png_path.with_suffix(".npy")), (mask > 0).astype(np.uint8))
+    return str(png_path)
 
-    cap.release()
-    return tracked_instances
+
+def _bbox_iou(a: np.ndarray, b: np.ndarray) -> float:
+    ax1, ay1, ax2, ay2 = a
+    bx1, by1, bx2, by2 = b
+    ix1, iy1 = max(ax1, bx1), max(ay1, by1)
+    ix2, iy2 = min(ax2, bx2), min(ay2, by2)
+    iw, ih = max(0.0, ix2 - ix1), max(0.0, iy2 - iy1)
+    inter = iw * ih
+    area_a = max(0.0, ax2 - ax1) * max(0.0, ay2 - ay1)
+    area_b = max(0.0, bx2 - bx1) * max(0.0, by2 - by1)
+    union = area_a + area_b - inter
+    return float(inter / union) if union > 0 else 0.0
+
+
+def _mask_centroid(mask: np.ndarray) -> Optional[List[float]]:
+    ys, xs = np.where(mask > 0)
+    if len(xs) == 0:
+        return None
+    return [float(xs.mean()), float(ys.mean())]
+
+
+def _clip_box(box: np.ndarray, w: int, h: int) -> np.ndarray:
+    x1, y1, x2, y2 = box
+    x1 = float(np.clip(x1, 0, w - 1))
+    y1 = float(np.clip(y1, 0, h - 1))
+    x2 = float(np.clip(x2, 0, w - 1))
+    y2 = float(np.clip(y2, 0, h - 1))
+    if x2 < x1:
+        x1, x2 = x2, x1
+    if y2 < y1:
+        y1, y2 = y2, y1
+    return np.array([x1, y1, x2, y2], dtype=np.float32)
+
+
+def _pad_box(box: np.ndarray, w: int, h: int, pad_ratio: float) -> np.ndarray:
+    x1, y1, x2, y2 = box
+    bw = max(1.0, x2 - x1)
+    bh = max(1.0, y2 - y1)
+    pad_w = bw * pad_ratio
+    pad_h = bh * pad_ratio
+    return _clip_box(np.array([x1 - pad_w, y1 - pad_h, x2 + pad_w, y2 + pad_h], dtype=np.float32), w, h)
+
+
+def _refine_boxes(
+    boxes: np.ndarray,
+    w: int,
+    h: int,
+    pad_ratio: float = 0.04,
+    min_side: float = 2.0,
+) -> np.ndarray:
+    refined = []
+    for b in boxes:
+        rb = _pad_box(b, w, h, pad_ratio)
+        if (rb[2] - rb[0]) >= min_side and (rb[3] - rb[1]) >= min_side:
+            refined.append(rb)
+        else:
+            refined.append(_clip_box(b, w, h))
+    return np.stack(refined, axis=0).astype(np.float32)
+
+
+def _postprocess_mask(mask: np.ndarray, min_area: int = 64, kernel: int = 3) -> np.ndarray:
+    if mask is None or mask.size == 0:
+        return mask
+    m = (mask > 0).astype(np.uint8) * 255
+    if kernel > 1:
+        k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel, kernel))
+        m = cv2.morphologyEx(m, cv2.MORPH_OPEN, k)
+        m = cv2.morphologyEx(m, cv2.MORPH_CLOSE, k)
+    m = _fill_mask_holes(m)
+    if int((m > 0).sum()) < int(min_area):
+        return np.zeros_like(m, dtype=np.uint8)
+    return (m > 0).astype(np.uint8)
+
+
+def _fill_mask_holes(mask: np.ndarray) -> np.ndarray:
+    if mask is None or mask.size == 0:
+        return mask
+    m = (mask > 0).astype(np.uint8) * 255
+    h, w = m.shape[:2]
+    flood = m.copy()
+    flood_mask = np.zeros((h + 2, w + 2), dtype=np.uint8)
+    cv2.floodFill(flood, flood_mask, (0, 0), 255)
+    inv = cv2.bitwise_not(flood)
+    filled = cv2.bitwise_or(m, inv)
+    return filled
+
+
+def _resolve_mask_overlaps(masks: np.ndarray) -> np.ndarray:
+    if masks.size == 0:
+        return masks
+    areas = masks.reshape(masks.shape[0], -1).sum(axis=1)
+    order = np.argsort(areas)
+    occupied = np.zeros(masks.shape[1:], dtype=bool)
+    out = masks.copy().astype(bool)
+    for idx in order:
+        m = out[idx] & ~occupied
+        out[idx] = m
+        occupied |= m
+    return out
+
+
+def _load_yaml(path: Optional[str]) -> Dict[str, Any]:
+    if not path:
+        return {}
+    p = Path(path)
+    if not p.exists():
+        return {}
+    with open(p, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+    if not isinstance(data, dict):
+        return {}
+    return data
+
+
+def process_video_for_segmentation(
+    video_path: str,
+    progress_callback: Optional[Callable[[int, int, str], None]] = None,
+    *,
+    data_root: str = "data",
+    target_height: int = 720,
+    yolo_model: str = "models/checkpoints/yolo/yolov8n.pt",
+    yolo_conf: float = 0.25,
+    yolo_iou: float = 0.6,
+    keyframe_stride: int = 12,
+    tracker_points_per_instance: int = 24,
+    clean_output_dirs: bool = True,
+    save_npy_masks: bool = False,
+    cotracker_checkpoint: str = "models/checkpoints/cotracker/cotracker2.pth",
+    sam2_model_cfg: str = "configs/sam2/sam2_hiera_s.yaml",
+    sam2_checkpoint: str = "models/checkpoints/sam2/sam2_hiera_small.pt",
+    target_labels: Optional[List[str]] = None,
+    device: str = "cuda",
+    yolo_config_path: str = "configs/yolov8.yaml",
+    cotracker_config_path: str = "configs/cotracker2.yaml",
+) -> Dict[str, Any]:
+    cb = progress_callback or _noop_progress
+
+    # ---------- Config loading (YAML -> runtime args) ----------
+    yolo_cfg = _load_yaml(yolo_config_path)
+    cot_cfg = _load_yaml(cotracker_config_path)
+
+    yolo_model = str(yolo_cfg.get("model_path", yolo_model))
+    yolo_conf = float(yolo_cfg.get("conf_threshold", yolo_conf))
+    yolo_iou = float(yolo_cfg.get("iou_threshold", yolo_iou))
+    device = str(yolo_cfg.get("device", device))
+
+    label_aliases_cfg = yolo_cfg.get("label_aliases", {})
+    label_aliases: Dict[str, str] = {}
+    if isinstance(label_aliases_cfg, dict):
+        for k, v in label_aliases_cfg.items():
+            label_aliases[str(k).lower()] = str(v)
+
+    mask_cfg = yolo_cfg.get("mask_refine", {})
+    if not isinstance(mask_cfg, dict):
+        mask_cfg = {}
+    box_pad_ratio = float(mask_cfg.get("box_pad_ratio", 0.06))
+    mask_min_area = int(mask_cfg.get("min_area", 32))
+    mask_kernel = int(mask_cfg.get("morph_kernel", 3))
+
+    if target_labels is None:
+        cfg_labels = yolo_cfg.get("target_labels", None)
+        if isinstance(cfg_labels, list):
+            target_labels = [str(x) for x in cfg_labels]
+
+    cotracker_checkpoint = str(cot_cfg.get("checkpoint", cotracker_checkpoint))
+    tracker_points_per_instance = int(cot_cfg.get("points_per_instance", tracker_points_per_instance))
+    keyframe_stride = int(cot_cfg.get("keyframe_stride", keyframe_stride))
+    max_frames_per_chunk = cot_cfg.get("max_frames_per_chunk", None)
+    if isinstance(max_frames_per_chunk, (int, float)):
+        max_frames_per_chunk = int(max_frames_per_chunk)
+        if max_frames_per_chunk <= 0:
+            max_frames_per_chunk = None
+    device = str(cot_cfg.get("device", device))
+
+    # COCO-safe default
+    if target_labels is None:
+        target_labels = ["person", "tie", "handbag", "backpack", "umbrella", "suitcase"]
+
+    def _run_once(max_h: int) -> Dict[str, Any]:
+        data_root_p = Path(data_root)
+        frames_dir = data_root_p / "extracted_frames"
+        masks_root = data_root_p / "intermediate" / "masks"
+        meta_dir = data_root_p / "intermediate" / "metadata"
+
+        _mkdir(frames_dir, clean=clean_output_dirs)
+        _mkdir(masks_root, clean=clean_output_dirs)
+        _mkdir(meta_dir, clean=False)
+
+        cap = cv2.VideoCapture(video_path)
+        if not cap.isOpened():
+            raise RuntimeError(f"Cannot open video: {video_path}")
+
+        est_total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        fps = float(cap.get(cv2.CAP_PROP_FPS) or 0.0)
+
+        frames_bgr: List[np.ndarray] = []
+        frame_paths: List[str] = []
+
+        cb(0, max(1, est_total), f"Extracting frames at <= {max_h}p...")
+        idx = 0
+        while True:
+            ok, frame = cap.read()
+            if not ok:
+                break
+            resized, _scale = _resize_keep_aspect(frame, max_h=max_h)
+            out = frames_dir / _frame_name(idx)
+            cv2.imwrite(str(out), resized)
+            frames_bgr.append(resized)
+            frame_paths.append(str(out))
+            idx += 1
+            cb(min(idx, max(1, est_total)), max(1, est_total), f"Extracted frame {idx}")
+        cap.release()
+
+        total_frames = len(frames_bgr)
+        if total_frames == 0:
+            raise RuntimeError("No frames extracted from video.")
+
+        label_set = {x.lower() for x in target_labels}
+        if label_aliases:
+            label_set |= set(label_aliases.keys())
+        instances: Dict[int, Instance] = {}
+        next_instance_id = 1
+
+        keyframes = list(range(0, total_frames, max(1, keyframe_stride)))
+        if (total_frames - 1) not in keyframes:
+            keyframes.append(total_frames - 1)
+
+        prev_key_bboxes: Dict[int, np.ndarray] = {}
+        instance_seed_points: Dict[int, np.ndarray] = {}
+
+        # ---------- Phase A ----------
+        cb(0, 1, "Phase A: Loading YOLO + SAM2...")
+        detector = YoloV8Detector(model=yolo_model, device=device)
+        sam2 = Sam2Masker(model_cfg=sam2_model_cfg, checkpoint_path=sam2_checkpoint, device=device)
+
+        cb(0, len(keyframes), "Phase A: keyframe detection + masks...")
+        for i, fidx in enumerate(keyframes):
+            frame = frames_bgr[fidx]
+            dets = detector.detect(frame, conf=yolo_conf, iou=yolo_iou, target_labels=label_set)
+            if not dets:
+                cb(i + 1, len(keyframes), f"Keyframe {fidx}: no detections")
+                continue
+
+            if label_aliases:
+                for det in dets:
+                    key = det.label.lower()
+                    if key in label_aliases:
+                        det.label = label_aliases[key]
+
+            boxes = np.stack([d.bbox_xyxy for d in dets], axis=0).astype(np.float32)
+            h, w = frame.shape[:2]
+            refined_boxes = _refine_boxes(boxes, w, h, pad_ratio=box_pad_ratio)
+            masks = sam2.masks_from_boxes(
+                frame,
+                refined_boxes,
+                multimask_output=True,
+                selection="score_area",
+                area_weight=0.15,
+            )
+            if masks.size > 0:
+                masks = np.stack(
+                    [_postprocess_mask(m.astype(np.uint8), min_area=mask_min_area, kernel=mask_kernel) for m in masks],
+                    axis=0,
+                ).astype(bool)
+                masks = _resolve_mask_overlaps(masks)
+
+            assigned = []
+            curr_id_to_bbox: Dict[int, np.ndarray] = {}
+
+            for det, mask in zip(dets, masks):
+                best_id, best_score = None, 0.0
+                for iid, pb in prev_key_bboxes.items():
+                    if iid in instances and instances[iid].label != det.label:
+                        continue
+                    s = _bbox_iou(det.bbox_xyxy, pb)
+                    if s > best_score:
+                        best_score, best_id = s, iid
+
+                if best_id is not None and best_score >= 0.2 and best_id not in assigned:
+                    iid = best_id
+                else:
+                    iid = next_instance_id
+                    next_instance_id += 1
+                    instances[iid] = Instance(
+                        instance_id=iid,
+                        label=det.label,
+                        first_frame=fidx,
+                        last_frame=fidx,
+                    )
+
+                inst = instances[iid]
+                inst.last_frame = max(inst.last_frame, fidx)
+                inst.keyframes.append(frame_paths[fidx])
+                inst.keyframe_indices.append(fidx)
+                inst.bboxes[fidx] = [float(v) for v in det.bbox_xyxy.tolist()]
+                ctr = _mask_centroid(mask.astype(np.uint8))
+                if ctr is not None:
+                    inst.centroids[fidx] = ctr
+
+                frame_mask_dir = masks_root / f"frame_{fidx:06d}"
+                inst.mask_paths[fidx] = _save_mask(
+                    mask.astype(np.uint8),
+                    frame_mask_dir / f"instance_{iid:04d}.png",
+                    save_npy=save_npy_masks,
+                )
+
+                if iid not in instance_seed_points:
+                    pts = CoTrackerPersistentTracker.sample_points_from_mask(
+                        mask.astype(np.uint8), k=tracker_points_per_instance
+                    )
+                    if pts.shape[0] == 0:
+                        x1, y1, x2, y2 = det.bbox_xyxy
+                        pts = np.array(
+                            [[(x1 + x2) / 2, (y1 + y2) / 2], [x1, y1], [x2, y1], [x1, y2], [x2, y2]],
+                            dtype=np.float32,
+                        )
+                    instance_seed_points[iid] = pts
+
+                assigned.append(iid)
+                curr_id_to_bbox[iid] = det.bbox_xyxy.copy()
+
+            prev_key_bboxes = curr_id_to_bbox
+            cb(i + 1, len(keyframes), f"Keyframe {fidx}: {len(dets)} detections")
+
+        del detector, sam2
+        _clear_gpu()
+        cb(1, 1, "Phase A complete")
+
+        if not instances:
+            meta_path = meta_dir / "segmentation_tracking_metadata.json"
+            meta = {
+                "video_path": video_path,
+                "total_frames": total_frames,
+                "fps": fps,
+                "resize_height": max_h,
+                "instances": {},
+                "frames_dir": str(frames_dir),
+                "masks_dir": str(masks_root),
+            }
+            with open(meta_path, "w", encoding="utf-8") as f:
+                json.dump(meta, f, indent=2)
+            return {
+                "video_path": video_path,
+                "total_frames": total_frames,
+                "fps": fps,
+                "frame_paths": frame_paths,
+                "instances": [],
+                "mask_root": str(masks_root),
+                "metadata_path": str(meta_path),
+            }
+
+        # ---------- Phase B ----------
+        cb(0, 1, "Phase B: Loading CoTracker...")
+        tracker = CoTrackerPersistentTracker(
+            checkpoint_path=cotracker_checkpoint,
+            device=device,
+            max_frames_per_chunk=max_frames_per_chunk,
+        )
+        tracked_points = tracker.track_points(frames_bgr, instance_seed_points)
+        del tracker
+        _clear_gpu()
+        cb(1, 1, "Phase B complete")
+
+        H, W = frames_bgr[0].shape[:2]
+        tracked_bboxes: Dict[int, Dict[int, List[float]]] = {iid: {} for iid in instances.keys()}
+        for iid, tr in tracked_points.items():  # tr [T,K,2]
+            for t in range(tr.shape[0]):
+                pts = tr[t]
+                xs = np.clip(pts[:, 0], 0, W - 1)
+                ys = np.clip(pts[:, 1], 0, H - 1)
+                if xs.size == 0:
+                    continue
+                x1, x2 = float(xs.min()), float(xs.max())
+                y1, y2 = float(ys.min()), float(ys.max())
+                if (x2 - x1) < 2 or (y2 - y1) < 2:
+                    continue
+                tracked_bboxes[iid][t] = [x1, y1, x2, y2]
+
+        # ---------- Phase C ----------
+        cb(0, 1, "Phase C: Loading SAM2...")
+        sam2_final = Sam2Masker(model_cfg=sam2_model_cfg, checkpoint_path=sam2_checkpoint, device=device)
+
+        cb(0, total_frames, "Phase C: generating masks on all frames...")
+        for t in range(total_frames):
+            frame = frames_bgr[t]
+            frame_iids, frame_boxes = [], []
+
+            for iid in instances.keys():
+                if t in instances[iid].mask_paths:
+                    continue
+                if t in tracked_bboxes.get(iid, {}):
+                    frame_iids.append(iid)
+                    frame_boxes.append(tracked_bboxes[iid][t])
+
+            if not frame_boxes:
+                cb(t + 1, total_frames, f"Frame {t}: no masks")
+                continue
+
+            chunk = 8
+            for s in range(0, len(frame_boxes), chunk):
+                chunk_iids = frame_iids[s : s + chunk]
+                chunk_boxes = np.array(frame_boxes[s : s + chunk], dtype=np.float32)
+                h, w = frame.shape[:2]
+                refined_boxes = _refine_boxes(chunk_boxes, w, h, pad_ratio=box_pad_ratio)
+                chunk_masks = sam2_final.masks_from_boxes(
+                    frame,
+                    refined_boxes,
+                    multimask_output=True,
+                    selection="score_area",
+                    area_weight=0.15,
+                )
+                if chunk_masks.size > 0:
+                    chunk_masks = np.stack(
+                        [_postprocess_mask(m.astype(np.uint8), min_area=mask_min_area, kernel=mask_kernel) for m in chunk_masks],
+                        axis=0,
+                    ).astype(bool)
+                    chunk_masks = _resolve_mask_overlaps(chunk_masks)
+
+                for iid, box, mask in zip(chunk_iids, refined_boxes, chunk_masks):
+                    inst = instances[iid]
+                    inst.bboxes[t] = [float(v) for v in box.tolist()]
+                    ctr = _mask_centroid(mask.astype(np.uint8))
+                    if ctr is not None:
+                        inst.centroids[t] = ctr
+                    inst.first_frame = min(inst.first_frame, t)
+                    inst.last_frame = max(inst.last_frame, t)
+
+                    frame_mask_dir = masks_root / f"frame_{t:06d}"
+                    inst.mask_paths[t] = _save_mask(
+                        mask.astype(np.uint8),
+                        frame_mask_dir / f"instance_{iid:04d}.png",
+                        save_npy=save_npy_masks,
+                    )
+
+            cb(t + 1, total_frames, f"Frame {t}: generated {len(frame_boxes)} masks")
+
+        del sam2_final
+        _clear_gpu()
+        cb(1, 1, "Phase C complete")
+
+        meta = {
+            "video_path": video_path,
+            "total_frames": total_frames,
+            "fps": fps,
+            "resize_height": max_h,
+            "frames_dir": str(frames_dir),
+            "masks_dir": str(masks_root),
+            "instances": {
+                str(iid): {
+                    "id": inst.instance_id,
+                    "label": inst.label,
+                    "first_frame": inst.first_frame,
+                    "last_frame": inst.last_frame,
+                    "keyframes": inst.keyframes,
+                    "keyframe_indices": inst.keyframe_indices,
+                    "bboxes": {str(k): v for k, v in inst.bboxes.items()},
+                    "centroids": {str(k): v for k, v in inst.centroids.items()},
+                    "mask_paths": {str(k): v for k, v in inst.mask_paths.items()},
+                }
+                for iid, inst in instances.items()
+            },
+        }
+        meta_path = meta_dir / "segmentation_tracking_metadata.json"
+        with open(meta_path, "w", encoding="utf-8") as f:
+            json.dump(meta, f, indent=2)
+
+        ui_instances = []
+        for iid in sorted(instances.keys()):
+            inst = instances[iid]
+            sample_frames = sorted(inst.mask_paths.keys())[:6]
+            ui_instances.append(
+                {
+                    "id": inst.instance_id,
+                    "label": inst.label,
+                    "first_frame": inst.first_frame,
+                    "last_frame": inst.last_frame,
+                    "keyframes": inst.keyframes,
+                    "sample_mask_paths": [inst.mask_paths[k] for k in sample_frames],
+                    "num_masks": len(inst.mask_paths),
+                }
+            )
+
+        cb(1, 1, "Segmentation pipeline complete.")
+        return {
+            "video_path": video_path,
+            "total_frames": total_frames,
+            "fps": fps,
+            "frame_paths": frame_paths,
+            "instances": ui_instances,
+            "mask_root": str(masks_root),
+            "metadata_path": str(meta_path),
+        }
+
+    try:
+        return _run_once(target_height)
+    except RuntimeError as e:
+        if "out of memory" in str(e).lower() and target_height > 480:
+            _clear_gpu()
+            cb(0, 1, "OOM at 720p. Retrying at 480p...")
+            return _run_once(480)
+        raise
