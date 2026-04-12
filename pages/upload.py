@@ -50,13 +50,48 @@ if uploaded_file is not None:
             st.markdown("### Processing Settings")
             target_height = st.selectbox("Processing resolution", [720, 480], index=0)
             keyframe_stride = st.slider("Keyframe stride", min_value=4, max_value=24, value=12, step=1)
-            max_frames = st.slider("Max frames to process", min_value=30, max_value=600, value=180, step=10)
+
+            st.markdown("### Tracking Limits")
+            keep_chunk_default = st.checkbox(
+                "Keep default max frames per chunk",
+                value=True,
+                help="Uses the config value unless you override it here.",
+            )
+            max_frames_per_chunk = None
+            if not keep_chunk_default:
+                max_frames_per_chunk = st.slider(
+                    "Max frames per chunk",
+                    min_value=4,
+                    max_value=64,
+                    value=16,
+                    step=2,
+                )
+
+            total_frames = int(frame_count) if frame_count and frame_count > 0 else 0
+            keep_full_video = st.checkbox(
+                "Keep full video (no cap)",
+                value=True,
+                help="Process all frames in the uploaded video.",
+            )
+            max_frames = None
+            if not keep_full_video:
+                min_frames = 30 if total_frames >= 30 else max(1, total_frames)
+                max_frames = st.slider(
+                    "Max frames to process",
+                    min_value=min_frames,
+                    max_value=max(min_frames, min(600, total_frames or 600)),
+                    value=min(180, max(min_frames, min(600, total_frames or 600))),
+                    step=10,
+                )
 
             if st.button("Proceed", type="primary", key="proceed_btn"):
                 st.session_state["current_video_path"] = tfile.name
                 st.session_state["target_height"] = int(target_height)
                 st.session_state["keyframe_stride"] = int(keyframe_stride)
-                st.session_state["max_frames"] = int(max_frames)
+                st.session_state["max_total_frames"] = int(max_frames) if max_frames is not None else None
+                st.session_state["max_frames_per_chunk"] = (
+                    int(max_frames_per_chunk) if max_frames_per_chunk is not None else None
+                )
 
                 # reset previous run cache
                 st.session_state.pop("segmentation_result", None)

@@ -52,6 +52,15 @@ def _clear_gpu() -> None:
             pass
 
 
+def _is_oom_error(exc: RuntimeError) -> bool:
+    msg = str(exc).lower()
+    return (
+        "out of memory" in msg
+        or "not enough memory" in msg
+        or "defaultcpuallocator" in msg
+    )
+
+
 def _mkdir(path: Path, clean: bool = False) -> None:
     if clean and path.exists():
         shutil.rmtree(path, ignore_errors=True)
@@ -78,6 +87,14 @@ def _save_mask(mask: np.ndarray, png_path: Path, save_npy: bool = False) -> str:
     if save_npy:
         np.save(str(png_path.with_suffix(".npy")), (mask > 0).astype(np.uint8))
     return str(png_path)
+
+
+def _sam2_chunk_size(model_cfg: str, device: str) -> int:
+    name = Path(model_cfg).name.lower()
+    chunk = 4 if "hiera_l" in name or "large" in name else 8
+    if not str(device).startswith("cuda") or not torch.cuda.is_available():
+        chunk = min(chunk, 2)
+    return max(1, int(chunk))
 
 
 def _bbox_iou(a: np.ndarray, b: np.ndarray) -> float:
@@ -199,20 +216,22 @@ def process_video_for_segmentation(
     *,
     data_root: str = "data",
     target_height: int = 720,
-    yolo_model: str = "models/checkpoints/yolo/yolov8n.pt",
+    yolo_model: str = "models/checkpoints/yolo/yolo11s.pt",
     yolo_conf: float = 0.25,
     yolo_iou: float = 0.6,
     keyframe_stride: int = 12,
     tracker_points_per_instance: int = 24,
+    max_frames_per_chunk: Optional[int] = None,
+    max_total_frames: Optional[int] = None,
     clean_output_dirs: bool = True,
     save_npy_masks: bool = False,
     cotracker_checkpoint: str = "models/checkpoints/cotracker/cotracker2.pth",
-    sam2_model_cfg: str = "configs/sam2/sam2_hiera_s.yaml",
-    sam2_checkpoint: str = "models/checkpoints/sam2/sam2_hiera_small.pt",
+    sam2_model_cfg: str = "configs/perception/sam2_hiera_l.yaml",
+    sam2_checkpoint: str = "models/checkpoints/sam2/sam2_hiera_large.pt",
     target_labels: Optional[List[str]] = None,
     device: str = "cuda",
-    yolo_config_path: str = "configs/yolov8.yaml",
-    cotracker_config_path: str = "configs/cotracker2.yaml",
+    yolo_config_path: str = "configs/perception/yolo11_s.yaml",
+    cotracker_config_path: str = "configs/perception/cotracker2.yaml",
 ) -> Dict[str, Any]:
     cb = progress_callback or _noop_progress
 
@@ -238,6 +257,15 @@ def process_video_for_segmentation(
     mask_min_area = int(mask_cfg.get("min_area", 32))
     mask_kernel = int(mask_cfg.get("morph_kernel", 3))
 
+    scene_cfg = yolo_cfg.get("scene_fallback", {})
+    scene_enabled = False
+    scene_track = False
+    scene_label = "scene"
+    if isinstance(scene_cfg, dict):
+        scene_enabled = bool(scene_cfg.get("enabled", False))
+        scene_track = bool(scene_cfg.get("track", False))
+        scene_label = str(scene_cfg.get("label", scene_label))
+
     if target_labels is None:
         cfg_labels = yolo_cfg.get("target_labels", None)
         if isinstance(cfg_labels, list):
@@ -246,12 +274,46 @@ def process_video_for_segmentation(
     cotracker_checkpoint = str(cot_cfg.get("checkpoint", cotracker_checkpoint))
     tracker_points_per_instance = int(cot_cfg.get("points_per_instance", tracker_points_per_instance))
     keyframe_stride = int(cot_cfg.get("keyframe_stride", keyframe_stride))
-    max_frames_per_chunk = cot_cfg.get("max_frames_per_chunk", None)
-    if isinstance(max_frames_per_chunk, (int, float)):
+
+    max_frames_per_chunk_cfg = cot_cfg.get("max_frames_per_chunk", None)
+    if isinstance(max_frames_per_chunk_cfg, (int, float)):
+        max_frames_per_chunk_cfg = int(max_frames_per_chunk_cfg)
+        if max_frames_per_chunk_cfg <= 0:
+            max_frames_per_chunk_cfg = None
+    else:
+        if max_frames_per_chunk_cfg is not None:
+            max_frames_per_chunk_cfg = None
+
+    if max_frames_per_chunk is None:
+        max_frames_per_chunk = max_frames_per_chunk_cfg
+    elif isinstance(max_frames_per_chunk, (int, float)):
         max_frames_per_chunk = int(max_frames_per_chunk)
         if max_frames_per_chunk <= 0:
             max_frames_per_chunk = None
+    else:
+        max_frames_per_chunk = None
+
+    max_total_frames_cfg = cot_cfg.get("max_total_frames", None)
+    if isinstance(max_total_frames_cfg, (int, float)):
+        max_total_frames_cfg = int(max_total_frames_cfg)
+        if max_total_frames_cfg <= 0:
+            max_total_frames_cfg = None
+    else:
+        if max_total_frames_cfg is not None:
+            max_total_frames_cfg = None
+
+    if max_total_frames is None:
+        max_total_frames = max_total_frames_cfg
+    elif isinstance(max_total_frames, (int, float)):
+        max_total_frames = int(max_total_frames)
+        if max_total_frames <= 0:
+            max_total_frames = None
+    else:
+        max_total_frames = None
     device = str(cot_cfg.get("device", device))
+
+    if max_frames_per_chunk is None and not torch.cuda.is_available():
+        max_frames_per_chunk = 8
 
     # COCO-safe default
     if target_labels is None:
@@ -277,9 +339,14 @@ def process_video_for_segmentation(
         frames_bgr: List[np.ndarray] = []
         frame_paths: List[str] = []
 
-        cb(0, max(1, est_total), f"Extracting frames at <= {max_h}p...")
+        total_hint = est_total
+        if max_total_frames is not None:
+            total_hint = min(total_hint, max_total_frames)
+        cb(0, max(1, total_hint), f"Extracting frames at <= {max_h}p...")
         idx = 0
         while True:
+            if max_total_frames is not None and idx >= max_total_frames:
+                break
             ok, frame = cap.read()
             if not ok:
                 break
@@ -289,7 +356,7 @@ def process_video_for_segmentation(
             frames_bgr.append(resized)
             frame_paths.append(str(out))
             idx += 1
-            cb(min(idx, max(1, est_total)), max(1, est_total), f"Extracted frame {idx}")
+            cb(min(idx, max(1, total_hint)), max(1, total_hint), f"Extracted frame {idx}")
         cap.release()
 
         total_frames = len(frames_bgr)
@@ -308,6 +375,9 @@ def process_video_for_segmentation(
 
         prev_key_bboxes: Dict[int, np.ndarray] = {}
         instance_seed_points: Dict[int, np.ndarray] = {}
+        scene_instance_id: Optional[int] = None
+
+        sam2_chunk = _sam2_chunk_size(sam2_model_cfg, device)
 
         # ---------- Phase A ----------
         cb(0, 1, "Phase A: Loading YOLO + SAM2...")
@@ -319,6 +389,71 @@ def process_video_for_segmentation(
             frame = frames_bgr[fidx]
             dets = detector.detect(frame, conf=yolo_conf, iou=yolo_iou, target_labels=label_set)
             if not dets:
+                if scene_enabled:
+                    h, w = frame.shape[:2]
+                    scene_box = np.array([[0.0, 0.0, float(w - 1), float(h - 1)]], dtype=np.float32)
+                    scene_masks = sam2.masks_from_boxes(
+                        frame,
+                        scene_box,
+                        multimask_output=True,
+                        selection="score_area",
+                        area_weight=0.15,
+                    )
+                    if scene_masks.size == 0:
+                        cb(i + 1, len(keyframes), f"Keyframe {fidx}: scene fallback empty")
+                        continue
+
+                    scene_mask = _postprocess_mask(
+                        scene_masks[0].astype(np.uint8),
+                        min_area=mask_min_area,
+                        kernel=mask_kernel,
+                    ).astype(bool)
+                    if not np.any(scene_mask):
+                        cb(i + 1, len(keyframes), f"Keyframe {fidx}: scene fallback empty")
+                        continue
+
+                    if scene_instance_id is None:
+                        scene_instance_id = next_instance_id
+                        next_instance_id += 1
+                        instances[scene_instance_id] = Instance(
+                            instance_id=scene_instance_id,
+                            label=scene_label,
+                            first_frame=fidx,
+                            last_frame=fidx,
+                        )
+
+                    inst = instances[scene_instance_id]
+                    inst.first_frame = min(inst.first_frame, fidx)
+                    inst.last_frame = max(inst.last_frame, fidx)
+                    inst.keyframes.append(frame_paths[fidx])
+                    inst.keyframe_indices.append(fidx)
+                    inst.bboxes[fidx] = [float(v) for v in scene_box[0].tolist()]
+                    ctr = _mask_centroid(scene_mask.astype(np.uint8))
+                    if ctr is not None:
+                        inst.centroids[fidx] = ctr
+
+                    frame_mask_dir = masks_root / f"frame_{fidx:06d}"
+                    inst.mask_paths[fidx] = _save_mask(
+                        scene_mask.astype(np.uint8),
+                        frame_mask_dir / f"instance_{scene_instance_id:04d}.png",
+                        save_npy=save_npy_masks,
+                    )
+
+                    if scene_track and scene_instance_id not in instance_seed_points:
+                        pts = CoTrackerPersistentTracker.sample_points_from_mask(
+                            scene_mask.astype(np.uint8),
+                            k=min(16, tracker_points_per_instance),
+                        )
+                        if pts.shape[0] == 0:
+                            pts = np.array(
+                                [[w / 2.0, h / 2.0], [0.0, 0.0], [w - 1.0, 0.0], [0.0, h - 1.0]],
+                                dtype=np.float32,
+                            )
+                        instance_seed_points[scene_instance_id] = pts
+
+                    cb(i + 1, len(keyframes), f"Keyframe {fidx}: scene fallback mask")
+                    continue
+
                 cb(i + 1, len(keyframes), f"Keyframe {fidx}: no detections")
                 continue
 
@@ -331,19 +466,31 @@ def process_video_for_segmentation(
             boxes = np.stack([d.bbox_xyxy for d in dets], axis=0).astype(np.float32)
             h, w = frame.shape[:2]
             refined_boxes = _refine_boxes(boxes, w, h, pad_ratio=box_pad_ratio)
-            masks = sam2.masks_from_boxes(
-                frame,
-                refined_boxes,
-                multimask_output=True,
-                selection="score_area",
-                area_weight=0.15,
-            )
-            if masks.size > 0:
-                masks = np.stack(
-                    [_postprocess_mask(m.astype(np.uint8), min_area=mask_min_area, kernel=mask_kernel) for m in masks],
-                    axis=0,
-                ).astype(bool)
-                masks = _resolve_mask_overlaps(masks)
+            masks_list: List[np.ndarray] = []
+            for s in range(0, len(refined_boxes), sam2_chunk):
+                chunk_boxes = refined_boxes[s : s + sam2_chunk]
+                chunk_masks = sam2.masks_from_boxes(
+                    frame,
+                    chunk_boxes,
+                    multimask_output=True,
+                    selection="score_area",
+                    area_weight=0.15,
+                )
+                if chunk_masks.size > 0:
+                    chunk_masks = np.stack(
+                        [
+                            _postprocess_mask(m.astype(np.uint8), min_area=mask_min_area, kernel=mask_kernel)
+                            for m in chunk_masks
+                        ],
+                        axis=0,
+                    ).astype(bool)
+                    chunk_masks = _resolve_mask_overlaps(chunk_masks)
+                masks_list.append(chunk_masks)
+
+            if masks_list:
+                masks = np.concatenate(masks_list, axis=0)
+            else:
+                masks = np.zeros((0, h, w), dtype=bool)
 
             assigned = []
             curr_id_to_bbox: Dict[int, np.ndarray] = {}
@@ -414,6 +561,7 @@ def process_video_for_segmentation(
                 "total_frames": total_frames,
                 "fps": fps,
                 "resize_height": max_h,
+                "max_total_frames": max_total_frames,
                 "instances": {},
                 "frames_dir": str(frames_dir),
                 "masks_dir": str(masks_root),
@@ -477,7 +625,7 @@ def process_video_for_segmentation(
                 cb(t + 1, total_frames, f"Frame {t}: no masks")
                 continue
 
-            chunk = 8
+            chunk = sam2_chunk
             for s in range(0, len(frame_boxes), chunk):
                 chunk_iids = frame_iids[s : s + chunk]
                 chunk_boxes = np.array(frame_boxes[s : s + chunk], dtype=np.float32)
@@ -524,6 +672,7 @@ def process_video_for_segmentation(
             "total_frames": total_frames,
             "fps": fps,
             "resize_height": max_h,
+                "max_total_frames": max_total_frames,
             "frames_dir": str(frames_dir),
             "masks_dir": str(masks_root),
             "instances": {
@@ -572,11 +721,23 @@ def process_video_for_segmentation(
             "metadata_path": str(meta_path),
         }
 
-    try:
-        return _run_once(target_height)
-    except RuntimeError as e:
-        if "out of memory" in str(e).lower() and target_height > 480:
+    retry_heights = [int(target_height)]
+    if target_height > 480:
+        retry_heights.append(480)
+    if target_height > 360:
+        retry_heights.append(360)
+
+    last_err: Optional[RuntimeError] = None
+    for i, max_h in enumerate(retry_heights):
+        try:
+            return _run_once(max_h)
+        except RuntimeError as e:
+            if not _is_oom_error(e) or i == (len(retry_heights) - 1):
+                raise
+            last_err = e
             _clear_gpu()
-            cb(0, 1, "OOM at 720p. Retrying at 480p...")
-            return _run_once(480)
-        raise
+            cb(0, 1, f"OOM at {max_h}p. Retrying at {retry_heights[i + 1]}p...")
+
+    if last_err is not None:
+        raise last_err
+    raise RuntimeError("Segmentation failed without an exception")

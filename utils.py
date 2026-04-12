@@ -38,9 +38,15 @@ def overlay_mask_on_frame(
     color=(255, 0, 0),
     alpha: float = 0.4,
 ) -> np.ndarray:
-    mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+    mask = cv2.imread(mask_path, cv2.IMREAD_UNCHANGED)
     if mask is None:
         return frame_rgb
+
+    if mask.ndim == 3:
+        if mask.shape[2] == 1:
+            mask = mask[:, :, 0]
+        else:
+            mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
 
     # If frame/mask shape differ (because preview uses source video), resize mask to frame.
     if mask.shape[:2] != frame_rgb.shape[:2]:

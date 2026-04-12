@@ -33,6 +33,7 @@ class Sam2Masker:
             raise ImportError("SAM2 is not available. Ensure sam2 is installed and importable.")
         sam2_model = self._build_model(model_cfg, checkpoint_path, device)
         self.predictor = SAM2ImagePredictor(sam2_model)
+        self.device = str(device)
 
     def masks_from_boxes(
         self,
@@ -50,12 +51,21 @@ class Sam2Masker:
         self.predictor.set_image(image_rgb)
 
         with torch.inference_mode():
-            masks, scores, _ = self.predictor.predict(
-                point_coords=None,
-                point_labels=None,
-                box=boxes_xyxy,
-                multimask_output=multimask_output,
-            )
+            if self.device.startswith("cuda") and torch.cuda.is_available():
+                with torch.autocast(device_type="cuda", dtype=torch.float16):
+                    masks, scores, _ = self.predictor.predict(
+                        point_coords=None,
+                        point_labels=None,
+                        box=boxes_xyxy,
+                        multimask_output=multimask_output,
+                    )
+            else:
+                masks, scores, _ = self.predictor.predict(
+                    point_coords=None,
+                    point_labels=None,
+                    box=boxes_xyxy,
+                    multimask_output=multimask_output,
+                )
 
         if hasattr(masks, "detach"):
             masks = masks.detach().cpu().numpy()
