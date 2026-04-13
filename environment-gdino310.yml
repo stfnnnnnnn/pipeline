@@ -1,8 +1,0 @@
-name: gdino310
-channels:
-  - conda-forge
-dependencies:
-  - python=3.10
-  - pip=24.0
-  - pip:
-      - -r requirements-gdino310.txt

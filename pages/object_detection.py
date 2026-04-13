@@ -46,7 +46,6 @@ def run_backend_once():
             progress_callback=cb,
             target_height=st.session_state.get("target_height", 720),
             keyframe_stride=st.session_state.get("keyframe_stride", 12),
-            mask_frame_stride=st.session_state.get("mask_frame_stride", None),
             max_total_frames=st.session_state.get("max_total_frames", None),
             max_frames_per_chunk=st.session_state.get("max_frames_per_chunk", None),
         )

@@ -1,12 +1,9 @@
 {
-  "video_path": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\tmpg3x5fy6p.mp4",
+  "video_path": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\tmp72vk9jea.mp4",
   "total_frames": 30,
   "fps": 30.01855692609977,
   "resize_height": 720,
   "max_total_frames": 30,
-  "keyframe_stride": 4,
-  "mask_frame_stride": 1,
-  "remask_keyframes": true,
   "frames_dir": "data\\extracted_frames",
   "masks_dir": "data\\intermediate\\masks",
   "instances": {
@@ -17,44 +14,32 @@
       "last_frame": 29,
       "keyframes": [
         "data\\extracted_frames\\frame_000000.png",
-        "data\\extracted_frames\\frame_000004.png",
-        "data\\extracted_frames\\frame_000008.png",
+        "data\\extracted_frames\\frame_000006.png",
         "data\\extracted_frames\\frame_000012.png",
-        "data\\extracted_frames\\frame_000016.png",
-        "data\\extracted_frames\\frame_000020.png",
+        "data\\extracted_frames\\frame_000018.png",
         "data\\extracted_frames\\frame_000024.png",
-        "data\\extracted_frames\\frame_000028.png",
         "data\\extracted_frames\\frame_000029.png"
       ],
       "keyframe_indices": [
         0,
-        4,
-        8,
+        6,
         12,
-        16,
-        20,
+        18,
         24,
-        28,
         29
       ],
       "bboxes": {
         "0": [
-          50.60000228881836,
-          144.49998474121094,
-          199.39999389648438,
-          359.0
+          58.125,
+          163.3125,
+          178.125,
+          359.8125
         ],
-        "4": [
-          49.5,
-          175.875,
-          162.375,
-          359.625
-        ],
-        "8": [
-          43.59375,
-          176.25,
-          148.3125,
-          359.625
+        "6": [
+          46.40625,
+          177.75,
+          154.03125,
+          360.0
         ],
         "12": [
           39.9375,
@@ -62,29 +47,17 @@
           137.25,
           359.625
         ],
-        "16": [
-          32.0625,
-          181.03125,
-          126.375,
+        "18": [
+          28.40625,
+          185.25,
+          120.5625,
           359.625
-        ],
-        "20": [
-          25.4765625,
-          186.9375,
-          113.625,
-          359.8125
         ],
         "24": [
           17.5546875,
           183.75,
           98.15625,
           359.25
-        ],
-        "28": [
-          7.96875,
-          183.5625,
-          87.84375,
-          359.8125
         ],
         "29": [
           4.640625,
@@ -95,36 +68,24 @@
       },
       "centroids": {
         "0": [
-          120.37167272937236,
-          275.83111034124374
+          120.34480568227752,
+          275.7747877807934
         ],
-        "4": [
-          109.20811215462093,
-          283.4929222812032
-        ],
-        "8": [
-          99.43087625814091,
-          281.4551509769094
+        "6": [
+          104.04362875892406,
+          284.35393379966825
         ],
         "12": [
           87.61335492474757,
           270.61049723756906
         ],
-        "16": [
-          80.29379945908043,
-          273.5771812080537
-        ],
-        "20": [
-          74.36499068901304,
-          278.2272860923258
+        "18": [
+          75.48782079164855,
+          275.3125271857329
         ],
         "24": [
           62.081596682218766,
           274.69756350440645
-        ],
-        "28": [
-          48.44430079724197,
-          271.65546218487395
         ],
         "29": [
           42.2636251541307,
@@ -133,13 +94,10 @@
       },
       "mask_paths": {
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0001.png",
-        "4": "data\\intermediate\\masks\\frame_000004\\instance_0001.png",
-        "8": "data\\intermediate\\masks\\frame_000008\\instance_0001.png",
+        "6": "data\\intermediate\\masks\\frame_000006\\instance_0001.png",
         "12": "data\\intermediate\\masks\\frame_000012\\instance_0001.png",
-        "16": "data\\intermediate\\masks\\frame_000016\\instance_0001.png",
-        "20": "data\\intermediate\\masks\\frame_000020\\instance_0001.png",
+        "18": "data\\intermediate\\masks\\frame_000018\\instance_0001.png",
         "24": "data\\intermediate\\masks\\frame_000024\\instance_0001.png",
-        "28": "data\\intermediate\\masks\\frame_000028\\instance_0001.png",
         "29": "data\\intermediate\\masks\\frame_000029\\instance_0001.png"
       }
     },
@@ -147,40 +105,34 @@
       "id": 2,
       "label": "person",
       "first_frame": 0,
-      "last_frame": 20,
+      "last_frame": 29,
       "keyframes": [
         "data\\extracted_frames\\frame_000000.png",
-        "data\\extracted_frames\\frame_000004.png",
-        "data\\extracted_frames\\frame_000008.png",
+        "data\\extracted_frames\\frame_000006.png",
         "data\\extracted_frames\\frame_000012.png",
-        "data\\extracted_frames\\frame_000016.png",
-        "data\\extracted_frames\\frame_000020.png"
+        "data\\extracted_frames\\frame_000018.png",
+        "data\\extracted_frames\\frame_000024.png",
+        "data\\extracted_frames\\frame_000029.png"
       ],
       "keyframe_indices": [
         0,
-        4,
-        8,
+        6,
         12,
-        16,
-        20
+        18,
+        24,
+        29
       ],
       "bboxes": {
         "0": [
-          361.8999938964844,
-          111.49998474121094,
-          447.1000061035156,
-          359.0
+          367.5,
+          154.3125,
+          449.25,
+          359.8125
         ],
-        "4": [
-          368.4375,
-          155.25,
-          447.75,
-          359.625
-        ],
-        "8": [
-          368.4375,
-          156.46875,
-          450.75,
+        "6": [
+          368.625,
+          156.0,
+          450.375,
           359.625
         ],
         "12": [
@@ -189,96 +141,90 @@
           450.0,
           359.8125
         ],
-        "16": [
-          362.25,
-          158.71875,
-          447.75,
+        "18": [
+          359.25,
+          158.8125,
+          438.0,
+          359.8125
+        ],
+        "24": [
+          324.75,
+          162.28125,
+          480.0,
           359.625
         ],
-        "20": [
-          354.0,
-          159.375,
-          421.5,
+        "29": [
+          248.625,
+          176.25,
+          423.375,
           359.625
         ]
       },
       "centroids": {
         "0": [
-          406.4698025551684,
-          266.8510038161606
+          406.72990485564304,
+          266.1073654855643
         ],
-        "4": [
-          407.2345658633212,
-          265.5901287553648
-        ],
-        "8": [
-          407.8163915193162,
-          267.5342327997989
+        "6": [
+          407.71548429971756,
+          265.99883701611566
         ],
         "12": [
           408.41459854014596,
           268.84444444444443
         ],
-        "16": [
-          404.17074360016255,
-          268.6104835432751
+        "18": [
+          397.27760511882997,
+          267.6011882998172
         ],
-        "20": [
-          383.77557483133694,
-          265.86933773922624
+        "24": [
+          394.9966145574032,
+          275.7097978691626
+        ],
+        "29": [
+          331.71815230570655,
+          273.5312707787382
         ]
       },
       "mask_paths": {
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0002.png",
-        "4": "data\\intermediate\\masks\\frame_000004\\instance_0002.png",
-        "8": "data\\intermediate\\masks\\frame_000008\\instance_0002.png",
+        "6": "data\\intermediate\\masks\\frame_000006\\instance_0002.png",
         "12": "data\\intermediate\\masks\\frame_000012\\instance_0002.png",
-        "16": "data\\intermediate\\masks\\frame_000016\\instance_0002.png",
-        "20": "data\\intermediate\\masks\\frame_000020\\instance_0002.png"
+        "18": "data\\intermediate\\masks\\frame_000018\\instance_0002.png",
+        "24": "data\\intermediate\\masks\\frame_000024\\instance_0002.png",
+        "29": "data\\intermediate\\masks\\frame_000029\\instance_0002.png"
       }
     },
     "3": {
       "id": 3,
       "label": "person",
       "first_frame": 0,
-      "last_frame": 28,
+      "last_frame": 24,
       "keyframes": [
         "data\\extracted_frames\\frame_000000.png",
-        "data\\extracted_frames\\frame_000004.png",
-        "data\\extracted_frames\\frame_000008.png",
+        "data\\extracted_frames\\frame_000006.png",
         "data\\extracted_frames\\frame_000012.png",
-        "data\\extracted_frames\\frame_000016.png",
-        "data\\extracted_frames\\frame_000020.png",
-        "data\\extracted_frames\\frame_000024.png",
-        "data\\extracted_frames\\frame_000028.png"
+        "data\\extracted_frames\\frame_000018.png",
+        "data\\extracted_frames\\frame_000024.png"
       ],
       "keyframe_indices": [
         0,
-        4,
-        8,
+        6,
         12,
-        16,
-        20,
-        24,
-        28
+        18,
+        24
       ],
       "bboxes": {
         "0": [
-          272.3999938964844,
-          180.79998779296875,
-          351.6000061035156,
-          359.0
-        ],
-        "4": [
-          277.125,
-          203.25,
-          351.375,
+          276.9375,
+          200.25,
+          351.5625,
           360.0
         ],
-        "8": [
-          277.875,
-          201.375,
-          351.75,
+        "6": [
+          277.6875,
+          202.125,
+          351.5625,
           359.625
         ],
         "12": [
@@ -287,74 +233,47 @@
           351.375,
           359.625
         ],
-        "16": [
-          273.9375,
-          202.5,
-          347.4375,
-          360.0
-        ],
-        "20": [
-          265.5,
+        "18": [
+          274.5,
           203.25,
-          339.75,
-          360.0
+          345.0,
+          359.625
         ],
         "24": [
           255.375,
           214.875,
           328.125,
           359.625
-        ],
-        "28": [
-          240.75,
-          196.125,
-          298.5,
-          359.625
         ]
       },
       "centroids": {
         "0": [
-          310.5304179886881,
-          285.7585873913643
+          310.53152533039645,
+          285.75853524229075
         ],
-        "4": [
-          310.06827586206896,
-          286.31641379310344
-        ],
-        "8": [
-          310.4339906874829,
-          285.60257463708575
+        "6": [
+          310.41470104223805,
+          285.70282501371366
         ],
         "12": [
           310.3079954954955,
           288.09543918918916
         ],
-        "16": [
-          307.0048249241798,
-          286.91590846429557
-        ],
-        "20": [
-          299.1610729023384,
-          287.0268225584594
+        "18": [
+          304.59897094430994,
+          286.3158292978208
         ],
         "24": [
           287.26521060842435,
           288.7428733512977
-        ],
-        "28": [
-          265.7911038658593,
-          284.7456916627853
         ]
       },
       "mask_paths": {
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0003.png",
-        "4": "data\\intermediate\\masks\\frame_000004\\instance_0003.png",
-        "8": "data\\intermediate\\masks\\frame_000008\\instance_0003.png",
+        "6": "data\\intermediate\\masks\\frame_000006\\instance_0003.png",
         "12": "data\\intermediate\\masks\\frame_000012\\instance_0003.png",
-        "16": "data\\intermediate\\masks\\frame_000016\\instance_0003.png",
-        "20": "data\\intermediate\\masks\\frame_000020\\instance_0003.png",
-        "24": "data\\intermediate\\masks\\frame_000024\\instance_0003.png",
-        "28": "data\\intermediate\\masks\\frame_000028\\instance_0003.png"
+        "18": "data\\intermediate\\masks\\frame_000018\\instance_0003.png",
+        "24": "data\\intermediate\\masks\\frame_000024\\instance_0003.png"
       }
     },
     "4": {
@@ -364,44 +283,32 @@
       "last_frame": 29,
       "keyframes": [
         "data\\extracted_frames\\frame_000000.png",
-        "data\\extracted_frames\\frame_000004.png",
-        "data\\extracted_frames\\frame_000008.png",
+        "data\\extracted_frames\\frame_000006.png",
         "data\\extracted_frames\\frame_000012.png",
-        "data\\extracted_frames\\frame_000016.png",
-        "data\\extracted_frames\\frame_000020.png",
+        "data\\extracted_frames\\frame_000018.png",
         "data\\extracted_frames\\frame_000024.png",
-        "data\\extracted_frames\\frame_000028.png",
         "data\\extracted_frames\\frame_000029.png"
       ],
       "keyframe_indices": [
         0,
-        4,
-        8,
+        6,
         12,
-        16,
-        20,
+        18,
         24,
-        28,
         29
       ],
       "bboxes": {
         "0": [
-          181.3000030517578,
-          162.5,
-          237.6999969482422,
-          348.5
+          183.9375,
+          179.4375,
+          242.0625,
+          333.5625
         ],
-        "4": [
-          182.625,
-          185.4375,
-          237.75,
-          333.9375
-        ],
-        "8": [
-          180.28125,
-          184.5,
-          231.375,
-          330.0
+        "6": [
+          181.59375,
+          186.375,
+          235.5,
+          332.625
         ],
         "12": [
           176.53125,
@@ -409,16 +316,10 @@
           227.625,
           319.125
         ],
-        "16": [
-          171.1875,
-          181.875,
-          221.4375,
-          319.5
-        ],
-        "20": [
-          162.5625,
-          184.21875,
-          212.0625,
+        "18": [
+          167.15625,
+          184.875,
+          218.25,
           319.875
         ],
         "24": [
@@ -426,12 +327,6 @@
           188.25,
           196.125,
           318.0
-        ],
-        "28": [
-          140.25,
-          187.125,
-          183.0,
-          309.75
         ],
         "29": [
           137.25,
@@ -442,36 +337,24 @@
       },
       "centroids": {
         "0": [
-          210.114307781425,
-          250.82776597798804
+          210.24085774459124,
+          250.73425234539536
         ],
-        "4": [
-          208.18712829226848,
-          253.41482582837722
-        ],
-        "8": [
-          205.132692747655,
-          252.44520704644245
+        "6": [
+          207.02021978021978,
+          254.5331868131868
         ],
         "12": [
           201.51761645779143,
           248.13312839914875
         ],
-        "16": [
-          196.0831471829238,
-          246.39563167038966
-        ],
-        "20": [
-          187.3032,
-          245.39333333333335
+        "18": [
+          192.58705184420944,
+          245.6125870518442
         ],
         "24": [
           173.93464252838294,
           245.3267873580853
-        ],
-        "28": [
-          160.83854005567585,
-          244.44169502010516
         ],
         "29": [
           157.8251148545176,
@@ -480,13 +363,10 @@
       },
       "mask_paths": {
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0004.png",
-        "4": "data\\intermediate\\masks\\frame_000004\\instance_0004.png",
-        "8": "data\\intermediate\\masks\\frame_000008\\instance_0004.png",
+        "6": "data\\intermediate\\masks\\frame_000006\\instance_0004.png",
         "12": "data\\intermediate\\masks\\frame_000012\\instance_0004.png",
-        "16": "data\\intermediate\\masks\\frame_000016\\instance_0004.png",
-        "20": "data\\intermediate\\masks\\frame_000020\\instance_0004.png",
+        "18": "data\\intermediate\\masks\\frame_000018\\instance_0004.png",
         "24": "data\\intermediate\\masks\\frame_000024\\instance_0004.png",
-        "28": "data\\intermediate\\masks\\frame_000028\\instance_0004.png",
         "29": "data\\intermediate\\masks\\frame_000029\\instance_0004.png"
       }
     },
@@ -494,43 +374,31 @@
       "id": 5,
       "label": "car",
       "first_frame": 0,
-      "last_frame": 24,
+      "last_frame": 18,
       "keyframes": [
         "data\\extracted_frames\\frame_000000.png",
-        "data\\extracted_frames\\frame_000004.png",
-        "data\\extracted_frames\\frame_000008.png",
+        "data\\extracted_frames\\frame_000006.png",
         "data\\extracted_frames\\frame_000012.png",
-        "data\\extracted_frames\\frame_000016.png",
-        "data\\extracted_frames\\frame_000020.png",
-        "data\\extracted_frames\\frame_000024.png"
+        "data\\extracted_frames\\frame_000018.png"
       ],
       "keyframe_indices": [
         0,
-        4,
-        8,
+        6,
         12,
-        16,
-        20,
-        24
+        18
       ],
       "bboxes": {
         "0": [
-          249.1999969482422,
-          194.29998779296875,
-          294.79998779296875,
-          226.69998168945312
+          252.0,
+          198.1875,
+          293.25,
+          225.1875
         ],
-        "4": [
+        "6": [
           250.5,
           199.875,
-          290.25,
+          288.75,
           226.125
-        ],
-        "8": [
-          249.375,
-          200.25,
-          287.25,
-          225.75
         ],
         "12": [
           248.25,
@@ -538,63 +406,36 @@
           282.75,
           226.5
         ],
-        "16": [
-          244.125,
-          202.5,
-          274.125,
-          227.625
-        ],
-        "20": [
-          235.875,
-          202.875,
-          263.25,
-          227.625
-        ],
-        "24": [
-          224.4375,
-          202.875,
-          252.1875,
+        "18": [
+          240.375,
+          203.625,
+          269.25,
           227.625
         ]
       },
       "centroids": {
         "0": [
-          271.82536151279197,
-          210.94660734149053
+          271.9416299559471,
+          211.03964757709252
         ],
-        "4": [
-          269.53855140186914,
-          212.3271028037383
-        ],
-        "8": [
-          266.56572164948454,
-          212.3737113402062
+        "6": [
+          268.9745454545455,
+          212.19878787878787
         ],
         "12": [
           264.5419734904271,
           213.42268041237114
         ],
-        "16": [
-          258.0858034321373,
-          214.13728549141965
-        ],
-        "20": [
-          248.95667244367417,
-          214.38648180242635
-        ],
-        "24": [
-          236.33795493934142,
-          214.315424610052
+        "18": [
+          254.80213903743316,
+          214.75044563279857
         ]
       },
       "mask_paths": {
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0005.png",
-        "4": "data\\intermediate\\masks\\frame_000004\\instance_0005.png",
-        "8": "data\\intermediate\\masks\\frame_000008\\instance_0005.png",
+        "6": "data\\intermediate\\masks\\frame_000006\\instance_0005.png",
         "12": "data\\intermediate\\masks\\frame_000012\\instance_0005.png",
-        "16": "data\\intermediate\\masks\\frame_000016\\instance_0005.png",
-        "20": "data\\intermediate\\masks\\frame_000020\\instance_0005.png",
-        "24": "data\\intermediate\\masks\\frame_000024\\instance_0005.png"
+        "18": "data\\intermediate\\masks\\frame_000018\\instance_0005.png"
       }
     },
     "6": {
@@ -604,44 +445,32 @@
       "last_frame": 29,
       "keyframes": [
         "data\\extracted_frames\\frame_000000.png",
-        "data\\extracted_frames\\frame_000004.png",
-        "data\\extracted_frames\\frame_000008.png",
+        "data\\extracted_frames\\frame_000006.png",
         "data\\extracted_frames\\frame_000012.png",
-        "data\\extracted_frames\\frame_000016.png",
-        "data\\extracted_frames\\frame_000020.png",
+        "data\\extracted_frames\\frame_000018.png",
         "data\\extracted_frames\\frame_000024.png",
-        "data\\extracted_frames\\frame_000028.png",
         "data\\extracted_frames\\frame_000029.png"
       ],
       "keyframe_indices": [
         0,
-        4,
-        8,
+        6,
         12,
-        16,
-        20,
+        18,
         24,
-        28,
         29
       ],
       "bboxes": {
         "0": [
-          283.0,
-          177.79998779296875,
-          379.0,
-          252.1999969482422
+          291.9375,
+          183.84375,
+          375.5625,
+          248.25
         ],
-        "4": [
-          286.875,
-          185.625,
-          370.125,
-          247.875
-        ],
-        "8": [
-          283.875,
-          187.59375,
-          360.375,
-          246.75
+        "6": [
+          289.875,
+          186.46875,
+          365.625,
+          247.125
         ],
         "12": [
           278.0625,
@@ -649,16 +478,10 @@
           352.6875,
           246.375
         ],
-        "16": [
-          270.0,
-          191.53125,
-          342.0,
-          245.625
-        ],
-        "20": [
-          259.875,
+        "18": [
+          265.3125,
           192.0,
-          328.125,
+          335.8125,
           244.5
         ],
         "24": [
@@ -666,12 +489,6 @@
           193.125,
           311.4375,
           242.625
-        ],
-        "28": [
-          232.125,
-          194.0625,
-          286.125,
-          241.6875
         ],
         "29": [
           228.375,
@@ -682,36 +499,24 @@
       },
       "centroids": {
         "0": [
-          342.3384375,
-          211.039375
+          342.46681074405683,
+          211.18184624884225
         ],
-        "4": [
-          335.45324881141045,
-          213.83740095087163
-        ],
-        "8": [
-          327.56405279503105,
-          213.46040372670808
+        "6": [
+          333.06182495344507,
+          213.97653631284916
         ],
         "12": [
           318.5256183745583,
           214.40017667844523
         ],
-        "16": [
-          306.7906137184116,
-          214.58638473439916
-        ],
-        "20": [
-          292.4170454545455,
-          213.8693181818182
+        "18": [
+          300.32681867535285,
+          214.66612377850163
         ],
         "24": [
           275.1060961313013,
           214.20398593200468
-        ],
-        "28": [
-          251.26695842450766,
-          213.85193289569656
         ],
         "29": [
           246.2555260831123,
@@ -720,13 +525,10 @@
       },
       "mask_paths": {
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0006.png",
-        "4": "data\\intermediate\\masks\\frame_000004\\instance_0006.png",
-        "8": "data\\intermediate\\masks\\frame_000008\\instance_0006.png",
+        "6": "data\\intermediate\\masks\\frame_000006\\instance_0006.png",
         "12": "data\\intermediate\\masks\\frame_000012\\instance_0006.png",
-        "16": "data\\intermediate\\masks\\frame_000016\\instance_0006.png",
-        "20": "data\\intermediate\\masks\\frame_000020\\instance_0006.png",
+        "18": "data\\intermediate\\masks\\frame_000018\\instance_0006.png",
         "24": "data\\intermediate\\masks\\frame_000024\\instance_0006.png",
-        "28": "data\\intermediate\\masks\\frame_000028\\instance_0006.png",
         "29": "data\\intermediate\\masks\\frame_000029\\instance_0006.png"
       }
     },
@@ -737,32 +539,24 @@
       "last_frame": 12,
       "keyframes": [
         "data\\extracted_frames\\frame_000000.png",
-        "data\\extracted_frames\\frame_000004.png",
-        "data\\extracted_frames\\frame_000008.png",
+        "data\\extracted_frames\\frame_000006.png",
         "data\\extracted_frames\\frame_000012.png"
       ],
       "keyframe_indices": [
         0,
-        4,
-        8,
+        6,
         12
       ],
       "bboxes": {
         "0": [
-          444.8999938964844,
-          233.5999755859375,
-          479.0,
-          359.0
-        ],
-        "4": [
-          441.75,
-          252.375,
+          441.0,
+          249.0,
           480.0,
           359.625
         ],
-        "8": [
-          444.75,
-          257.625,
+        "6": [
+          442.5,
+          254.625,
           480.0,
           359.625
         ],
@@ -775,16 +569,12 @@
       },
       "centroids": {
         "0": [
-          464.8913580246914,
-          313.25291005291007
+          464.9395132426628,
+          314.8367931281317
         ],
-        "4": [
-          465.09511472982973,
-          316.09548482605476
-        ],
-        "8": [
-          465.6890587288817,
-          318.0301689460982
+        "6": [
+          465.4512006196747,
+          317.26491092176605
         ],
         "12": [
           466.38824538824537,
@@ -793,8 +583,7 @@
       },
       "mask_paths": {
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0007.png",
-        "4": "data\\intermediate\\masks\\frame_000004\\instance_0007.png",
-        "8": "data\\intermediate\\masks\\frame_000008\\instance_0007.png",
+        "6": "data\\intermediate\\masks\\frame_000006\\instance_0007.png",
         "12": "data\\intermediate\\masks\\frame_000012\\instance_0007.png"
       }
     },
@@ -802,41 +591,31 @@
       "id": 8,
       "label": "handbag",
       "first_frame": 0,
-      "last_frame": 20,
+      "last_frame": 18,
       "keyframes": [
         "data\\extracted_frames\\frame_000000.png",
-        "data\\extracted_frames\\frame_000004.png",
-        "data\\extracted_frames\\frame_000008.png",
+        "data\\extracted_frames\\frame_000006.png",
         "data\\extracted_frames\\frame_000012.png",
-        "data\\extracted_frames\\frame_000016.png",
-        "data\\extracted_frames\\frame_000020.png"
+        "data\\extracted_frames\\frame_000018.png"
       ],
       "keyframe_indices": [
         0,
-        4,
-        8,
+        6,
         12,
-        16,
-        20
+        18
       ],
       "bboxes": {
         "0": [
-          216.0,
-          195.09999084472656,
-          240.0,
-          277.89996337890625
+          217.125,
+          203.25,
+          241.125,
+          272.25
         ],
-        "4": [
-          215.0625,
-          207.375,
-          237.9375,
-          274.5
-        ],
-        "8": [
-          208.5,
-          207.5625,
-          232.125,
-          272.4375
+        "6": [
+          211.875,
+          207.0,
+          234.75,
+          275.25
         ],
         "12": [
           203.25,
@@ -844,52 +623,36 @@
           227.25,
           268.3125
         ],
-        "16": [
-          197.25,
-          202.875,
-          221.625,
-          265.875
-        ],
-        "20": [
-          189.84375,
+        "18": [
+          195.1875,
           204.375,
-          212.25,
-          268.875
+          218.0625,
+          267.75
         ]
       },
       "centroids": {
         "0": [
-          227.07834101382488,
-          245.51612903225808
+          227.09561304836896,
+          245.65466816647918
         ],
-        "4": [
-          224.10532837670385,
-          248.39405204460965
-        ],
-        "8": [
-          218.62254259501967,
-          244.97640891218873
+        "6": [
+          221.7004160887656,
+          248.01664355062414
         ],
         "12": [
           213.32718894009216,
           241.69239631336404
         ],
-        "16": [
-          208.6344696969697,
-          237.5123106060606
-        ],
-        "20": [
-          200.12402428447527,
-          238.16218560277537
+        "18": [
+          205.3953488372093,
+          237.3953488372093
         ]
       },
       "mask_paths": {
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0008.png",
-        "4": "data\\intermediate\\masks\\frame_000004\\instance_0008.png",
-        "8": "data\\intermediate\\masks\\frame_000008\\instance_0008.png",
+        "6": "data\\intermediate\\masks\\frame_000006\\instance_0008.png",
         "12": "data\\intermediate\\masks\\frame_000012\\instance_0008.png",
-        "16": "data\\intermediate\\masks\\frame_000016\\instance_0008.png",
-        "20": "data\\intermediate\\masks\\frame_000020\\instance_0008.png"
+        "18": "data\\intermediate\\masks\\frame_000018\\instance_0008.png"
       }
     },
     "9": {
@@ -899,44 +662,32 @@
       "last_frame": 29,
       "keyframes": [
         "data\\extracted_frames\\frame_000000.png",
-        "data\\extracted_frames\\frame_000004.png",
-        "data\\extracted_frames\\frame_000008.png",
+        "data\\extracted_frames\\frame_000006.png",
         "data\\extracted_frames\\frame_000012.png",
-        "data\\extracted_frames\\frame_000016.png",
-        "data\\extracted_frames\\frame_000020.png",
+        "data\\extracted_frames\\frame_000018.png",
         "data\\extracted_frames\\frame_000024.png",
-        "data\\extracted_frames\\frame_000028.png",
         "data\\extracted_frames\\frame_000029.png"
       ],
       "keyframe_indices": [
         0,
-        4,
-        8,
+        6,
         12,
-        16,
-        20,
+        18,
         24,
-        28,
         29
       ],
       "bboxes": {
         "0": [
           207.0,
-          165.5,
-          255.00001525878906,
-          207.5
-        ],
-        "4": [
-          205.5,
-          170.8125,
+          168.75,
           251.25,
-          209.4375
+          203.625
         ],
-        "8": [
+        "6": [
           205.5,
-          171.5625,
-          249.75,
-          205.6875
+          171.0,
+          251.25,
+          210.375
         ],
         "12": [
           205.5,
@@ -944,29 +695,17 @@
           248.25,
           211.5
         ],
-        "16": [
-          201.0,
-          173.4375,
-          244.875,
-          212.4375
-        ],
-        "20": [
-          194.25,
-          174.1875,
-          237.0,
-          213.9375
+        "18": [
+          198.375,
+          173.0625,
+          241.125,
+          212.0625
         ],
         "24": [
           181.40625,
           174.9375,
           225.75,
           210.5625
-        ],
-        "28": [
-          169.875,
-          175.59375,
-          213.75,
-          215.25
         ],
         "29": [
           165.75,
@@ -977,36 +716,24 @@
       },
       "centroids": {
         "0": [
-          231.46511627906978,
-          181.9355179704017
+          231.60167714884696,
+          181.9496855345912
         ],
-        "4": [
-          229.3339416058394,
-          184.98357664233578
-        ],
-        "8": [
-          228.3127413127413,
-          184.5646718146718
+        "6": [
+          228.76986301369863,
+          184.80913242009132
         ],
         "12": [
           227.25313059033988,
           186.67531305903398
         ],
-        "16": [
-          226.51597222222222,
-          192.59375
-        ],
-        "20": [
-          218.97341337907375,
-          190.3662092624357
+        "18": [
+          220.29127134724857,
+          187.58823529411765
         ],
         "24": [
           203.0351201478743,
           189.07486136783734
-        ],
-        "28": [
-          194.42518397383483,
-          191.92804578904332
         ],
         "29": [
           188.4098690835851,
@@ -1015,13 +742,10 @@
       },
       "mask_paths": {
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0009.png",
-        "4": "data\\intermediate\\masks\\frame_000004\\instance_0009.png",
-        "8": "data\\intermediate\\masks\\frame_000008\\instance_0009.png",
+        "6": "data\\intermediate\\masks\\frame_000006\\instance_0009.png",
         "12": "data\\intermediate\\masks\\frame_000012\\instance_0009.png",
-        "16": "data\\intermediate\\masks\\frame_000016\\instance_0009.png",
-        "20": "data\\intermediate\\masks\\frame_000020\\instance_0009.png",
+        "18": "data\\intermediate\\masks\\frame_000018\\instance_0009.png",
         "24": "data\\intermediate\\masks\\frame_000024\\instance_0009.png",
-        "28": "data\\intermediate\\masks\\frame_000028\\instance_0009.png",
         "29": "data\\intermediate\\masks\\frame_000029\\instance_0009.png"
       }
     },
@@ -1032,44 +756,32 @@
       "last_frame": 29,
       "keyframes": [
         "data\\extracted_frames\\frame_000000.png",
-        "data\\extracted_frames\\frame_000004.png",
-        "data\\extracted_frames\\frame_000008.png",
+        "data\\extracted_frames\\frame_000006.png",
         "data\\extracted_frames\\frame_000012.png",
-        "data\\extracted_frames\\frame_000016.png",
-        "data\\extracted_frames\\frame_000020.png",
+        "data\\extracted_frames\\frame_000018.png",
         "data\\extracted_frames\\frame_000024.png",
-        "data\\extracted_frames\\frame_000028.png",
         "data\\extracted_frames\\frame_000029.png"
       ],
       "keyframe_indices": [
         0,
-        4,
-        8,
+        6,
         12,
-        16,
-        20,
+        18,
         24,
-        28,
         29
       ],
       "bboxes": {
         "0": [
-          98.9000015258789,
-          229.1999969482422,
-          196.10000610351562,
-          359.0
+          102.5625,
+          238.5,
+          191.8125,
+          360.0
         ],
-        "4": [
-          91.265625,
-          243.0,
-          176.0625,
+        "6": [
+          87.140625,
+          244.875,
+          168.5625,
           359.625
-        ],
-        "8": [
-          84.703125,
-          244.6875,
-          159.0,
-          358.3125
         ],
         "12": [
           77.15625,
@@ -1077,29 +789,17 @@
           149.34375,
           343.125
         ],
-        "16": [
-          67.921875,
-          232.5,
-          139.875,
-          340.5
-        ],
-        "20": [
-          67.78125,
-          245.0625,
-          124.78125,
-          336.5625
+        "18": [
+          72.1875,
+          245.625,
+          132.5625,
+          340.125
         ],
         "24": [
           51.9375,
           236.25,
           108.28125,
           324.75
-        ],
-        "28": [
-          40.03125,
-          231.375,
-          92.8125,
-          319.125
         ],
         "29": [
           36.515625,
@@ -1110,36 +810,24 @@
       },
       "centroids": {
         "0": [
-          154.50320512820514,
-          312.2275641025641
+          154.18853305785123,
+          311.6776859504132
         ],
-        "4": [
-          141.295907660021,
-          313.37775445960125
-        ],
-        "8": [
-          129.61436893203884,
-          307.1332038834951
+        "6": [
+          136.02646502835537,
+          313.76181474480154
         ],
         "12": [
           119.51866490996926,
           291.935441370224
         ],
-        "16": [
-          114.0911330049261,
-          300.817118226601
-        ],
-        "20": [
-          100.25196850393701,
-          296.005249343832
+        "18": [
+          106.92048192771084,
+          297.48975903614456
         ],
         "24": [
           86.25841750841751,
           287.42676767676767
-        ],
-        "28": [
-          71.11510128913444,
-          281.56537753222835
         ],
         "29": [
           67.78341013824885,
@@ -1148,13 +836,10 @@
       },
       "mask_paths": {
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0010.png",
-        "4": "data\\intermediate\\masks\\frame_000004\\instance_0010.png",
-        "8": "data\\intermediate\\masks\\frame_000008\\instance_0010.png",
+        "6": "data\\intermediate\\masks\\frame_000006\\instance_0010.png",
         "12": "data\\intermediate\\masks\\frame_000012\\instance_0010.png",
-        "16": "data\\intermediate\\masks\\frame_000016\\instance_0010.png",
-        "20": "data\\intermediate\\masks\\frame_000020\\instance_0010.png",
+        "18": "data\\intermediate\\masks\\frame_000018\\instance_0010.png",
         "24": "data\\intermediate\\masks\\frame_000024\\instance_0010.png",
-        "28": "data\\intermediate\\masks\\frame_000028\\instance_0010.png",
         "29": "data\\intermediate\\masks\\frame_000029\\instance_0010.png"
       }
     },
@@ -1162,47 +847,33 @@
       "id": 11,
       "label": "car",
       "first_frame": 0,
-      "last_frame": 29,
+      "last_frame": 24,
       "keyframes": [
         "data\\extracted_frames\\frame_000000.png",
-        "data\\extracted_frames\\frame_000004.png",
-        "data\\extracted_frames\\frame_000008.png",
+        "data\\extracted_frames\\frame_000006.png",
         "data\\extracted_frames\\frame_000012.png",
-        "data\\extracted_frames\\frame_000016.png",
-        "data\\extracted_frames\\frame_000020.png",
-        "data\\extracted_frames\\frame_000024.png",
-        "data\\extracted_frames\\frame_000028.png",
-        "data\\extracted_frames\\frame_000029.png"
+        "data\\extracted_frames\\frame_000018.png",
+        "data\\extracted_frames\\frame_000024.png"
       ],
       "keyframe_indices": [
         0,
-        4,
-        8,
+        6,
         12,
-        16,
-        20,
-        24,
-        28,
-        29
+        18,
+        24
       ],
       "bboxes": {
         "0": [
-          227.60000610351562,
-          189.69998168945312,
-          256.3999938964844,
-          217.29998779296875
-        ],
-        "4": [
-          228.9375,
-          196.6875,
+          229.6875,
+          193.5,
           257.0625,
-          217.6875
+          216.0
         ],
-        "8": [
-          228.5625,
-          195.75,
-          255.5625,
-          218.25
+        "6": [
+          228.1875,
+          196.5,
+          256.3125,
+          217.5
         ],
         "12": [
           227.625,
@@ -1210,124 +881,78 @@
           255.375,
           219.375
         ],
-        "16": [
-          223.5,
-          196.125,
-          249.0,
-          220.125
-        ],
-        "20": [
-          216.75,
-          195.375,
-          243.75,
-          220.125
+        "18": [
+          220.125,
+          195.75,
+          247.875,
+          219.75
         ],
         "24": [
-          204.75,
-          196.5,
-          231.75,
-          221.25
-        ],
-        "28": [
-          192.75,
-          198.0,
-          219.0,
-          221.625
-        ],
-        "29": [
-          190.125,
-          199.5,
-          215.25,
-          221.25
+          224.4375,
+          202.875,
+          252.1875,
+          227.625
         ]
       },
       "centroids": {
         "0": [
-          242.34458259325044,
-          203.202486678508
+          242.53886925795052,
+          203.2826855123675
         ],
-        "4": [
-          241.24137931034483,
-          205.23593466424683
-        ],
-        "8": [
-          240.54150943396226,
-          205.5679245283019
+        "6": [
+          240.88848263254113,
+          205.50274223034734
         ],
         "12": [
           239.88141592920354,
           205.94690265486724
         ],
-        "16": [
-          235.7929104477612,
-          206.9179104477612
-        ],
-        "20": [
-          228.53747714808043,
-          206.77513711151738
+        "18": [
+          233.20292504570384,
+          206.75137111517367
         ],
         "24": [
-          216.60299625468164,
-          207.7453183520599
-        ],
-        "28": [
-          204.5130260521042,
-          208.25250501002003
-        ],
-        "29": [
-          201.24435318275155,
-          208.81314168377824
+          236.33795493934142,
+          214.315424610052
         ]
       },
       "mask_paths": {
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0011.png",
-        "4": "data\\intermediate\\masks\\frame_000004\\instance_0011.png",
-        "8": "data\\intermediate\\masks\\frame_000008\\instance_0011.png",
+        "6": "data\\intermediate\\masks\\frame_000006\\instance_0011.png",
         "12": "data\\intermediate\\masks\\frame_000012\\instance_0011.png",
-        "16": "data\\intermediate\\masks\\frame_000016\\instance_0011.png",
-        "20": "data\\intermediate\\masks\\frame_000020\\instance_0011.png",
-        "24": "data\\intermediate\\masks\\frame_000024\\instance_0011.png",
-        "28": "data\\intermediate\\masks\\frame_000028\\instance_0011.png",
-        "29": "data\\intermediate\\masks\\frame_000029\\instance_0011.png"
+        "18": "data\\intermediate\\masks\\frame_000018\\instance_0011.png",
+        "24": "data\\intermediate\\masks\\frame_000024\\instance_0011.png"
       }
     },
     "12": {
       "id": 12,
       "label": "person",
       "first_frame": 0,
-      "last_frame": 16,
+      "last_frame": 18,
       "keyframes": [
         "data\\extracted_frames\\frame_000000.png",
-        "data\\extracted_frames\\frame_000004.png",
-        "data\\extracted_frames\\frame_000008.png",
+        "data\\extracted_frames\\frame_000006.png",
         "data\\extracted_frames\\frame_000012.png",
-        "data\\extracted_frames\\frame_000016.png"
+        "data\\extracted_frames\\frame_000018.png"
       ],
       "keyframe_indices": [
         0,
-        4,
-        8,
+        6,
         12,
-        16
+        18
       ],
       "bboxes": {
         "0": [
-          162.60000610351562,
-          182.1999969482422,
-          179.39999389648438,
-          227.79998779296875
+          165.5625,
+          187.78125,
+          179.4375,
+          225.375
         ],
-        "4": [
-          162.46875,
-          186.9375,
-          178.59375,
-          226.6875
-        ],
-        "8": [
+        "6": [
           163.5,
-          188.625,
+          187.6875,
           178.875,
-          226.875
+          227.0625
         ],
         "12": [
           163.6875,
@@ -1335,137 +960,111 @@
           179.0625,
           228.0
         ],
-        "16": [
-          160.59375,
+        "18": [
+          159.28125,
           191.625,
-          175.59375,
-          228.0
+          172.03125,
+          228.375
         ]
       },
       "centroids": {
         "0": [
-          170.6979405034325,
-          203.80778032036613
+          171.03809523809525,
+          204.25
         ],
-        "4": [
-          170.4292343387471,
-          205.12761020881672
-        ],
-        "8": [
-          170.97094430992735,
-          205.78208232445522
+        "6": [
+          170.7654028436019,
+          205.5260663507109
         ],
         "12": [
           170.8700980392157,
           206.9656862745098
         ],
-        "16": [
-          167.73067331670822,
-          208.6583541147132
+        "18": [
+          165.14933333333335,
+          208.66133333333335
         ]
       },
       "mask_paths": {
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0012.png",
-        "4": "data\\intermediate\\masks\\frame_000004\\instance_0012.png",
-        "8": "data\\intermediate\\masks\\frame_000008\\instance_0012.png",
+        "6": "data\\intermediate\\masks\\frame_000006\\instance_0012.png",
         "12": "data\\intermediate\\masks\\frame_000012\\instance_0012.png",
-        "16": "data\\intermediate\\masks\\frame_000016\\instance_0012.png"
+        "18": "data\\intermediate\\masks\\frame_000018\\instance_0012.png"
       }
     },
     "13": {
       "id": 13,
       "label": "person",
       "first_frame": 0,
-      "last_frame": 8,
+      "last_frame": 6,
       "keyframes": [
         "data\\extracted_frames\\frame_000000.png",
-        "data\\extracted_frames\\frame_000004.png",
-        "data\\extracted_frames\\frame_000008.png"
+        "data\\extracted_frames\\frame_000006.png"
       ],
       "keyframe_indices": [
         0,
-        4,
-        8
+        6
       ],
       "bboxes": {
         "0": [
-          48.29999923706055,
-          173.29998779296875,
-          68.69999694824219,
-          241.69998168945312
-        ],
-        "4": [
-          48.75,
-          181.5,
-          67.125,
-          234.75
-        ],
-        "8": [
-          49.03125,
-          181.78125,
+          48.65625,
+          177.9375,
           67.40625,
-          235.125
+          234.1875
+        ],
+        "6": [
+          48.9375,
+          181.5,
+          66.84375,
+          235.5
         ]
       },
       "centroids": {
         "0": [
-          57.993564993564995,
-          205.71814671814673
+          58.03914141414141,
+          205.54545454545453
         ],
-        "4": [
-          57.77613776137761,
-          207.54243542435424
-        ],
-        "8": [
-          58.06288532675709,
-          207.0406905055487
+        "6": [
+          57.790841584158414,
+          207.39975247524754
         ]
       },
       "mask_paths": {
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0013.png",
-        "4": "data\\intermediate\\masks\\frame_000004\\instance_0013.png",
-        "8": "data\\intermediate\\masks\\frame_000008\\instance_0013.png"
+        "6": "data\\intermediate\\masks\\frame_000006\\instance_0013.png"
       }
     },
     "14": {
       "id": 14,
       "label": "person",
       "first_frame": 0,
-      "last_frame": 20,
+      "last_frame": 24,
       "keyframes": [
         "data\\extracted_frames\\frame_000000.png",
-        "data\\extracted_frames\\frame_000004.png",
-        "data\\extracted_frames\\frame_000008.png",
+        "data\\extracted_frames\\frame_000006.png",
         "data\\extracted_frames\\frame_000012.png",
-        "data\\extracted_frames\\frame_000016.png",
-        "data\\extracted_frames\\frame_000020.png"
+        "data\\extracted_frames\\frame_000018.png",
+        "data\\extracted_frames\\frame_000024.png"
       ],
       "keyframe_indices": [
         0,
-        4,
-        8,
+        6,
         12,
-        16,
-        20
+        18,
+        24
       ],
       "bboxes": {
         "0": [
-          149.6999969482422,
-          184.3999786376953,
-          165.3000030517578,
-          227.59999084472656
-        ],
-        "4": [
-          151.3125,
-          191.4375,
-          165.0,
-          230.0625
-        ],
-        "8": [
-          151.3125,
-          189.5625,
+          151.5,
+          188.8125,
           165.75,
-          230.8125
+          226.3125
+        ],
+        "6": [
+          153.1875,
+          189.75,
+          165.5625,
+          230.25
         ],
         "12": [
           151.96875,
@@ -1473,89 +1072,78 @@
           165.46875,
           233.25
         ],
-        "16": [
-          150.28125,
-          193.125,
-          162.28125,
-          234.375
+        "18": [
+          148.875,
+          191.4375,
+          161.625,
+          234.5625
         ],
-        "20": [
-          154.59375,
-          192.0,
-          168.09375,
-          228.375
+        "24": [
+          144.1875,
+          193.875,
+          157.6875,
+          228.75
         ]
       },
       "centroids": {
         "0": [
-          157.48858447488584,
-          207.0205479452055
+          157.89934354485777,
+          207.04814004376368
         ],
-        "4": [
-          156.65376344086022,
-          209.33333333333334
-        ],
-        "8": [
-          156.94421487603304,
-          208.58471074380165
+        "6": [
+          157.3288590604027,
+          208.9798657718121
         ],
         "12": [
           157.50223214285714,
           211.41517857142858
         ],
-        "16": [
-          155.69007263922518,
-          212.68765133171914
+        "18": [
+          153.97025171624713,
+          211.97482837528605
         ],
-        "20": [
-          160.54907161803715,
-          208.42440318302388
+        "24": [
+          149.42191780821918,
+          209.73150684931508
         ]
       },
       "mask_paths": {
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0014.png",
-        "4": "data\\intermediate\\masks\\frame_000004\\instance_0014.png",
-        "8": "data\\intermediate\\masks\\frame_000008\\instance_0014.png",
+        "6": "data\\intermediate\\masks\\frame_000006\\instance_0014.png",
         "12": "data\\intermediate\\masks\\frame_000012\\instance_0014.png",
-        "16": "data\\intermediate\\masks\\frame_000016\\instance_0014.png",
-        "20": "data\\intermediate\\masks\\frame_000020\\instance_0014.png"
+        "18": "data\\intermediate\\masks\\frame_000018\\instance_0014.png",
+        "24": "data\\intermediate\\masks\\frame_000024\\instance_0014.png"
       }
     },
     "15": {
       "id": 15,
       "label": "person",
       "first_frame": 0,
-      "last_frame": 16,
+      "last_frame": 24,
       "keyframes": [
         "data\\extracted_frames\\frame_000000.png",
-        "data\\extracted_frames\\frame_000004.png",
-        "data\\extracted_frames\\frame_000008.png",
+        "data\\extracted_frames\\frame_000006.png",
         "data\\extracted_frames\\frame_000012.png",
-        "data\\extracted_frames\\frame_000016.png"
+        "data\\extracted_frames\\frame_000018.png",
+        "data\\extracted_frames\\frame_000024.png"
       ],
       "keyframe_indices": [
         0,
-        4,
-        8,
+        6,
         12,
-        16
+        18,
+        24
       ],
       "bboxes": {
         "0": [
-          442.70001220703125,
-          142.3000030517578,
-          479.0,
-          359.0
-        ],
-        "4": [
-          441.0,
-          178.875,
+          439.5,
+          170.625,
           480.0,
           359.625
         ],
-        "8": [
+        "6": [
           441.0,
-          176.25,
+          184.5,
           480.0,
           359.625
         ],
@@ -1565,41 +1153,47 @@
           480.0,
           359.625
         ],
-        "16": [
-          445.5,
-          183.75,
+        "18": [
+          420.0,
+          160.03125,
           480.0,
-          359.625
+          358.875
+        ],
+        "24": [
+          435.0,
+          176.4375,
+          480.0,
+          279.9375
         ]
       },
       "centroids": {
         "0": [
-          464.86898395721926,
-          267.57754010695186
+          464.6377781798444,
+          270.08159942102407
         ],
-        "4": [
-          464.7156826568266,
-          271.2612546125461
-        ],
-        "8": [
-          465.46259842519686,
-          273.1102362204724
+        "6": [
+          465.0049486105824,
+          272.39341454130187
         ],
         "12": [
           466.17614107883816,
           272.6348547717842
         ],
-        "16": [
-          456.8,
-          267.31651785714286
+        "18": [
+          455.9706320981989,
+          261.1984627738901
+        ],
+        "24": [
+          458.6435739721593,
+          221.6089349303982
         ]
       },
       "mask_paths": {
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0015.png",
-        "4": "data\\intermediate\\masks\\frame_000004\\instance_0015.png",
-        "8": "data\\intermediate\\masks\\frame_000008\\instance_0015.png",
+        "6": "data\\intermediate\\masks\\frame_000006\\instance_0015.png",
         "12": "data\\intermediate\\masks\\frame_000012\\instance_0015.png",
-        "16": "data\\intermediate\\masks\\frame_000016\\instance_0015.png"
+        "18": "data\\intermediate\\masks\\frame_000018\\instance_0015.png",
+        "24": "data\\intermediate\\masks\\frame_000024\\instance_0015.png"
       }
     },
     "16": {
@@ -1615,16 +1209,16 @@
       ],
       "bboxes": {
         "0": [
-          12.0,
-          175.3999786376953,
-          36.0,
-          242.60000610351562
+          14.8359375,
+          180.5625,
+          35.3671875,
+          239.0625
         ]
       },
       "centroids": {
         "0": [
-          24.52686762778506,
-          205.0707732634338
+          24.667529107373866,
+          205.5575679172057
         ]
       },
       "mask_paths": {
@@ -1644,16 +1238,16 @@
       ],
       "bboxes": {
         "0": [
-          152.89999389648438,
-          187.6999969482422,
-          166.10000610351562,
-          227.29998779296875
+          156.375,
+          195.75,
+          166.6875,
+          225.75
         ]
       },
       "centroids": {
         "0": [
-          157.85925925925926,
-          207.7925925925926
+          159.31197771587745,
+          208.22284122562675
         ]
       },
       "mask_paths": {
@@ -1664,85 +1258,189 @@
       "id": 18,
       "label": "handbag",
       "first_frame": 0,
-      "last_frame": 8,
+      "last_frame": 6,
       "keyframes": [
         "data\\extracted_frames\\frame_000000.png",
-        "data\\extracted_frames\\frame_000004.png",
-        "data\\extracted_frames\\frame_000008.png"
+        "data\\extracted_frames\\frame_000006.png"
       ],
       "keyframe_indices": [
         0,
-        4,
-        8
+        6
       ],
       "bboxes": {
         "0": [
-          275.3999938964844,
-          227.5999755859375,
-          330.6000061035156,
-          316.3999938964844
+          276.5625,
+          235.5,
+          333.1875,
+          310.5
         ],
-        "4": [
-          276.375,
-          236.625,
+        "6": [
+          276.75,
+          237.0,
           333.0,
           313.125
-        ],
-        "8": [
-          276.75,
-          237.1875,
-          333.0,
-          313.3125
         ]
       },
       "centroids": {
         "0": [
-          303.77870216306155,
-          284.7981142540211
+          303.93379604911905,
+          284.85584623598504
         ],
-        "4": [
-          303.84151547491996,
-          286.3505869797225
-        ],
-        "8": [
-          304.1995753715499,
-          286.89171974522293
+        "6": [
+          303.98988285410013,
+          286.7811501597444
         ]
       },
       "mask_paths": {
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0018.png",
-        "4": "data\\intermediate\\masks\\frame_000004\\instance_0018.png",
-        "8": "data\\intermediate\\masks\\frame_000008\\instance_0018.png"
+        "6": "data\\intermediate\\masks\\frame_000006\\instance_0018.png"
       }
     },
     "19": {
       "id": 19,
-      "label": "person",
+      "label": "tree",
       "first_frame": 0,
-      "last_frame": 16,
+      "last_frame": 0,
       "keyframes": [
-        "data\\extracted_frames\\frame_000004.png",
-        "data\\extracted_frames\\frame_000008.png",
-        "data\\extracted_frames\\frame_000012.png",
-        "data\\extracted_frames\\frame_000016.png"
+        "data\\extracted_frames\\frame_000000.png"
       ],
       "keyframe_indices": [
-        4,
-        8,
-        12,
-        16
+        0
       ],
       "bboxes": {
-        "4": [
-          131.4375,
-          191.25,
-          144.1875,
-          231.375
+        "0": [
+          147.4295654296875,
+          139.13278198242188,
+          210.36764526367188,
+          188.96353149414062
+        ]
+      },
+      "centroids": {
+        "0": [
+          190.7389917038928,
+          155.1761327377154
+        ]
+      },
+      "mask_paths": {
+        "0": "data\\intermediate\\masks\\frame_000000\\instance_0019.png"
+      }
+    },
+    "20": {
+      "id": 20,
+      "label": "tree",
+      "first_frame": 0,
+      "last_frame": 29,
+      "keyframes": [
+        "data\\extracted_frames\\frame_000000.png",
+        "data\\extracted_frames\\frame_000006.png",
+        "data\\extracted_frames\\frame_000012.png",
+        "data\\extracted_frames\\frame_000018.png",
+        "data\\extracted_frames\\frame_000024.png",
+        "data\\extracted_frames\\frame_000029.png"
+      ],
+      "keyframe_indices": [
+        0,
+        6,
+        12,
+        18,
+        24,
+        29
+      ],
+      "bboxes": {
+        "0": [
+          307.1005859375,
+          0.16434478759765625,
+          475.07745361328125,
+          162.16909790039062
         ],
-        "8": [
+        "6": [
+          307.3999938964844,
+          0.11649322509765625,
+          466.5979919433594,
+          163.7412109375
+        ],
+        "12": [
+          306.9312744140625,
+          0.0640716552734375,
+          464.1358642578125,
+          164.45718383789062
+        ],
+        "18": [
+          299.6502990722656,
+          0.14363861083984375,
+          456.4611511230469,
+          166.2034912109375
+        ],
+        "24": [
+          284.6417541503906,
+          0.09772491455078125,
+          442.3859558105469,
+          166.71929931640625
+        ],
+        "29": [
+          270.1059265136719,
+          0.191009521484375,
+          426.3836975097656,
+          166.8905487060547
+        ]
+      },
+      "centroids": {
+        "0": [
+          399.62911102467694,
+          70.08911361770171
+        ],
+        "6": [
+          383.16481039512064,
+          61.0794881994166
+        ],
+        "12": [
+          401.5837197113252,
+          75.18493730597105
+        ],
+        "18": [
+          400.27550500098056,
+          75.96042361247304
+        ],
+        "24": [
+          367.3502617801047,
+          68.69073298429319
+        ],
+        "29": [
+          463.98073555166377,
+          176.78984238178634
+        ]
+      },
+      "mask_paths": {
+        "0": "data\\intermediate\\masks\\frame_000000\\instance_0020.png",
+        "6": "data\\intermediate\\masks\\frame_000006\\instance_0020.png",
+        "12": "data\\intermediate\\masks\\frame_000012\\instance_0020.png",
+        "18": "data\\intermediate\\masks\\frame_000018\\instance_0020.png",
+        "24": "data\\intermediate\\masks\\frame_000024\\instance_0020.png",
+        "29": "data\\intermediate\\masks\\frame_000029\\instance_0020.png"
+      }
+    },
+    "21": {
+      "id": 21,
+      "label": "person",
+      "first_frame": 0,
+      "last_frame": 24,
+      "keyframes": [
+        "data\\extracted_frames\\frame_000006.png",
+        "data\\extracted_frames\\frame_000012.png",
+        "data\\extracted_frames\\frame_000018.png",
+        "data\\extracted_frames\\frame_000024.png"
+      ],
+      "keyframe_indices": [
+        6,
+        12,
+        18,
+        24
+      ],
+      "bboxes": {
+        "6": [
           131.625,
-          190.6875,
-          144.1875,
+          190.3125,
+          144.5625,
           231.9375
         ],
         "12": [
@@ -1751,166 +1449,92 @@
           144.1875,
           233.625
         ],
-        "16": [
-          127.5,
-          194.25,
-          140.625,
-          234.75
+        "18": [
+          124.59375,
+          194.0625,
+          137.71875,
+          234.9375
+        ],
+        "24": [
+          131.15625,
+          193.5,
+          145.59375,
+          237.0
         ],
         "0": [
-          129.8000030517578,
-          184.8999786376953,
-          144.1999969482422,
-          234.09999084472656
+          130.8000030517578,
+          183.79998779296875,
+          145.1999969482422,
+          234.19998168945312
         ]
       },
       "centroids": {
-        "4": [
-          137.77641277641277,
-          209.12039312039312
-        ],
-        "8": [
-          137.80481927710844,
-          209.83373493975904
+        "6": [
+          137.99058823529413,
+          209.24941176470588
         ],
         "12": [
           137.65693430656935,
           211.36009732360097
         ],
-        "16": [
-          134.0629539951574,
-          212.7675544794189
+        "18": [
+          130.98837209302326,
+          212.7
+        ],
+        "24": [
+          137.57256461232603,
+          212.6858846918489
         ],
         "0": [
-          136.16014234875445,
-          209.567615658363
+          137.4068136272545,
+          208.2364729458918
         ]
       },
       "mask_paths": {
-        "4": "data\\intermediate\\masks\\frame_000004\\instance_0019.png",
-        "8": "data\\intermediate\\masks\\frame_000008\\instance_0019.png",
-        "12": "data\\intermediate\\masks\\frame_000012\\instance_0019.png",
-        "16": "data\\intermediate\\masks\\frame_000016\\instance_0019.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0019.png"
-      }
-    },
-    "20": {
-      "id": 20,
-      "label": "handbag",
-      "first_frame": 0,
-      "last_frame": 4,
-      "keyframes": [
-        "data\\extracted_frames\\frame_000004.png"
-      ],
-      "keyframe_indices": [
-        4
-      ],
-      "bboxes": {
-        "4": [
-          432.0,
-          277.875,
-          450.0,
-          336.0
-        ],
-        "0": [
-          430.4999694824219,
-          271.1000061035156,
-          448.5,
-          341.89996337890625
-        ]
-      },
-      "centroids": {
-        "4": [
-          439.85,
-          307.8618421052632
-        ],
-        "0": [
-          439.4752186588921,
-          310.47084548104954
-        ]
-      },
-      "mask_paths": {
-        "4": "data\\intermediate\\masks\\frame_000004\\instance_0020.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0020.png"
-      }
-    },
-    "21": {
-      "id": 21,
-      "label": "car",
-      "first_frame": 0,
-      "last_frame": 4,
-      "keyframes": [
-        "data\\extracted_frames\\frame_000004.png"
-      ],
-      "keyframe_indices": [
-        4
-      ],
-      "bboxes": {
-        "4": [
-          224.25,
-          192.75,
-          244.5,
-          213.0
-        ],
-        "0": [
-          225.8000030517578,
-          190.69998168945312,
-          252.19998168945312,
-          218.3000030517578
-        ]
-      },
-      "centroids": {
-        "4": [
-          238.23046875,
-          204.625
-        ],
-        "0": [
-          241.71586715867159,
-          203.56826568265683
-        ]
-      },
-      "mask_paths": {
-        "4": "data\\intermediate\\masks\\frame_000004\\instance_0021.png",
+        "6": "data\\intermediate\\masks\\frame_000006\\instance_0021.png",
+        "12": "data\\intermediate\\masks\\frame_000012\\instance_0021.png",
+        "18": "data\\intermediate\\masks\\frame_000018\\instance_0021.png",
+        "24": "data\\intermediate\\masks\\frame_000024\\instance_0021.png",
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0021.png"
       }
     },
     "22": {
       "id": 22,
-      "label": "car",
+      "label": "person",
       "first_frame": 0,
-      "last_frame": 4,
+      "last_frame": 6,
       "keyframes": [
-        "data\\extracted_frames\\frame_000004.png"
+        "data\\extracted_frames\\frame_000006.png"
       ],
       "keyframe_indices": [
-        4
+        6
       ],
       "bboxes": {
-        "4": [
-          227.625,
-          193.125,
-          249.375,
-          215.625
+        "6": [
+          177.84375,
+          192.75,
+          190.96875,
+          216.75
         ],
         "0": [
-          228.6999969482422,
-          190.69998168945312,
-          256.29998779296875,
-          218.3000030517578
+          176.5,
+          189.69998168945312,
+          194.5,
+          217.29998779296875
         ]
       },
       "centroids": {
-        "4": [
-          250.18309859154928,
-          206.07042253521126
+        "6": [
+          185.45348837209303,
+          203.5
         ],
         "0": [
-          253.46666666666667,
-          198.33333333333334
+          186.30677290836653,
+          202.77290836653387
         ]
       },
       "mask_paths": {
-        "4": "data\\intermediate\\masks\\frame_000004\\instance_0022.png",
+        "6": "data\\intermediate\\masks\\frame_000006\\instance_0022.png",
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0022.png"
       }
     },
@@ -1918,54 +1542,12 @@
       "id": 23,
       "label": "person",
       "first_frame": 0,
-      "last_frame": 8,
+      "last_frame": 12,
       "keyframes": [
-        "data\\extracted_frames\\frame_000008.png"
+        "data\\extracted_frames\\frame_000012.png"
       ],
       "keyframe_indices": [
-        8
-      ],
-      "bboxes": {
-        "8": [
-          18.9140625,
-          182.625,
-          35.6015625,
-          239.625
-        ],
-        "0": [
-          15.399999618530273,
-          178.49998474121094,
-          34.599998474121094,
-          244.49998474121094
-        ]
-      },
-      "centroids": {
-        "8": [
-          24.869262865090402,
-          207.33796940194716
-        ],
-        "0": [
-          24.770083102493075,
-          205.1786703601108
-        ]
-      },
-      "mask_paths": {
-        "8": "data\\intermediate\\masks\\frame_000008\\instance_0023.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0023.png"
-      }
-    },
-    "24": {
-      "id": 24,
-      "label": "person",
-      "first_frame": 0,
-      "last_frame": 16,
-      "keyframes": [
-        "data\\extracted_frames\\frame_000012.png",
-        "data\\extracted_frames\\frame_000016.png"
-      ],
-      "keyframe_indices": [
-        12,
-        16
+        12
       ],
       "bboxes": {
         "12": [
@@ -1973,12 +1555,6 @@
           176.0625,
           480.0,
           284.4375
-        ],
-        "16": [
-          443.25,
-          210.375,
-          466.5,
-          289.5
         ],
         "0": [
           447.20001220703125,
@@ -1992,58 +1568,119 @@
           465.92588042588045,
           230.014742014742
         ],
-        "16": [
-          453.588424437299,
-          245.6966773847803
-        ],
         "0": [
           464.2672287390029,
           226.31964809384164
         ]
       },
       "mask_paths": {
+        "12": "data\\intermediate\\masks\\frame_000012\\instance_0023.png",
+        "0": "data\\intermediate\\masks\\frame_000000\\instance_0023.png"
+      }
+    },
+    "24": {
+      "id": 24,
+      "label": "tree",
+      "first_frame": 0,
+      "last_frame": 24,
+      "keyframes": [
+        "data\\extracted_frames\\frame_000012.png",
+        "data\\extracted_frames\\frame_000018.png",
+        "data\\extracted_frames\\frame_000024.png"
+      ],
+      "keyframe_indices": [
+        12,
+        18,
+        24
+      ],
+      "bboxes": {
+        "12": [
+          148.54505920410156,
+          143.2722930908203,
+          196.0017852783203,
+          190.19065856933594
+        ],
+        "18": [
+          143.20094299316406,
+          144.63284301757812,
+          191.1197967529297,
+          191.2667236328125
+        ],
+        "24": [
+          127.45996856689453,
+          145.55572509765625,
+          174.0897216796875,
+          190.8931884765625
+        ],
+        "0": [
+          143.3000030517578,
+          129.6999969482422,
+          211.6999969482422,
+          193.29998779296875
+        ]
+      },
+      "centroids": {
+        "12": [
+          176.70040853381752,
+          165.1270994098956
+        ],
+        "18": [
+          169.16754850088182,
+          168.060405643739
+        ],
+        "24": [
+          154.27377654662973,
+          168.54570637119113
+        ],
+        "0": [
+          178.5812987012987,
+          162.00259740259742
+        ]
+      },
+      "mask_paths": {
         "12": "data\\intermediate\\masks\\frame_000012\\instance_0024.png",
-        "16": "data\\intermediate\\masks\\frame_000016\\instance_0024.png",
+        "18": "data\\intermediate\\masks\\frame_000018\\instance_0024.png",
+        "24": "data\\intermediate\\masks\\frame_000024\\instance_0024.png",
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0024.png"
       }
     },
     "25": {
       "id": 25,
-      "label": "person",
+      "label": "road street",
       "first_frame": 0,
-      "last_frame": 16,
+      "last_frame": 12,
       "keyframes": [
-        "data\\extracted_frames\\frame_000016.png"
+        "data\\extracted_frames\\frame_000012.png"
       ],
       "keyframe_indices": [
-        16
+        12
       ],
       "bboxes": {
-        "16": [
-          458.25,
-          180.9375,
-          479.25,
-          358.6875
+        "12": [
+          0.0,
+          198.0654296875,
+          479.0,
+          359.0
         ],
         "0": [
-          454.79998779296875,
-          155.5,
+          0.0,
+          206.10000610351562,
           479.0,
           359.0
         ]
       },
       "centroids": {
-        "16": [
-          470.4718559022194,
-          274.2869089739466
+        "12": [
+          203.42637961907863,
+          306.4041185088719
         ],
         "0": [
-          469.2926583975863,
-          285.82433791485084
+          191.79294294959882,
+          301.63602110022606
         ]
       },
       "mask_paths": {
-        "16": "data\\intermediate\\masks\\frame_000016\\instance_0025.png",
+        "12": "data\\intermediate\\masks\\frame_000012\\instance_0025.png",
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0025.png"
       }
     },
@@ -2051,39 +1688,52 @@
       "id": 26,
       "label": "handbag",
       "first_frame": 0,
-      "last_frame": 16,
+      "last_frame": 24,
       "keyframes": [
-        "data\\extracted_frames\\frame_000016.png"
+        "data\\extracted_frames\\frame_000018.png",
+        "data\\extracted_frames\\frame_000024.png"
       ],
       "keyframe_indices": [
-        16
+        18,
+        24
       ],
       "bboxes": {
-        "16": [
-          273.0,
-          241.3125,
-          328.5,
-          318.1875
+        "18": [
+          270.0,
+          240.75,
+          326.25,
+          318.0
+        ],
+        "24": [
+          253.875,
+          240.75,
+          308.25,
+          315.75
         ],
         "0": [
-          268.70001220703125,
-          231.39999389648438,
-          332.29998779296875,
-          322.5999755859375
+          270.1000061035156,
+          230.29998779296875,
+          328.8999938964844,
+          322.6999816894531
         ]
       },
       "centroids": {
-        "16": [
-          300.1510333863275,
-          288.963963963964
+        "18": [
+          297.32373333333334,
+          289.05653333333333
+        ],
+        "24": [
+          280.9083686440678,
+          289.78919491525426
         ],
         "0": [
-          303.84301075268814,
-          285.35483870967744
+          303.7476839237057,
+          285.23324250681196
         ]
       },
       "mask_paths": {
-        "16": "data\\intermediate\\masks\\frame_000016\\instance_0026.png",
+        "18": "data\\intermediate\\masks\\frame_000018\\instance_0026.png",
+        "24": "data\\intermediate\\masks\\frame_000024\\instance_0026.png",
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0026.png"
       }
     },
@@ -2091,39 +1741,39 @@
       "id": 27,
       "label": "person",
       "first_frame": 0,
-      "last_frame": 16,
+      "last_frame": 18,
       "keyframes": [
-        "data\\extracted_frames\\frame_000016.png"
+        "data\\extracted_frames\\frame_000018.png"
       ],
       "keyframe_indices": [
-        16
+        18
       ],
       "bboxes": {
-        "16": [
-          279.0,
-          202.125,
-          314.25,
-          272.625
+        "18": [
+          7.40625,
+          184.59375,
+          27.1875,
+          243.75
         ],
         "0": [
-          276.3999938964844,
-          194.19998168945312,
-          319.6000061035156,
-          287.79998779296875
+          5.199999809265137,
+          179.29998779296875,
+          26.799999237060547,
+          247.69998168945312
         ]
       },
       "centroids": {
-        "16": [
-          300.7736403723665,
-          240.09309162175404
+        "18": [
+          16.74296205630355,
+          209.96328029375766
         ],
         "0": [
-          300.01507159005274,
-          228.80633006782216
+          10.334558823529411,
+          210.81617647058823
         ]
       },
       "mask_paths": {
-        "16": "data\\intermediate\\masks\\frame_000016\\instance_0027.png",
+        "18": "data\\intermediate\\masks\\frame_000018\\instance_0027.png",
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0027.png"
       }
     },
@@ -2131,65 +1781,39 @@
       "id": 28,
       "label": "person",
       "first_frame": 0,
-      "last_frame": 24,
+      "last_frame": 18,
       "keyframes": [
-        "data\\extracted_frames\\frame_000016.png",
-        "data\\extracted_frames\\frame_000020.png",
-        "data\\extracted_frames\\frame_000024.png"
+        "data\\extracted_frames\\frame_000018.png"
       ],
       "keyframe_indices": [
-        16,
-        20,
-        24
+        18
       ],
       "bboxes": {
-        "16": [
-          146.4375,
-          198.0,
-          159.5625,
-          234.0
-        ],
-        "20": [
-          142.875,
-          191.4375,
-          158.25,
-          234.9375
-        ],
-        "24": [
-          144.1875,
-          193.875,
-          157.6875,
-          228.75
+        "18": [
+          18.375,
+          186.375,
+          27.703125,
+          241.875
         ],
         "0": [
-          147.8000030517578,
-          190.0999755859375,
-          162.1999969482422,
-          236.89999389648438
+          11.699999809265137,
+          180.39999389648438,
+          27.299999237060547,
+          247.5999755859375
         ]
       },
       "centroids": {
-        "16": [
-          155.2196261682243,
-          212.80607476635515
-        ],
-        "20": [
-          149.30062630480168,
-          211.99164926931107
-        ],
-        "24": [
-          149.42191780821918,
-          209.73150684931508
+        "18": [
+          18.87741935483871,
+          211.09032258064516
         ],
         "0": [
-          156.35192307692307,
-          206.43269230769232
+          23.821629213483146,
+          205.11095505617976
         ]
       },
       "mask_paths": {
-        "16": "data\\intermediate\\masks\\frame_000016\\instance_0028.png",
-        "20": "data\\intermediate\\masks\\frame_000020\\instance_0028.png",
-        "24": "data\\intermediate\\masks\\frame_000024\\instance_0028.png",
+        "18": "data\\intermediate\\masks\\frame_000018\\instance_0028.png",
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0028.png"
       }
     },
@@ -2197,415 +1821,97 @@
       "id": 29,
       "label": "person",
       "first_frame": 0,
-      "last_frame": 16,
+      "last_frame": 18,
       "keyframes": [
-        "data\\extracted_frames\\frame_000016.png"
+        "data\\extracted_frames\\frame_000018.png"
       ],
       "keyframe_indices": [
-        16
+        18
       ],
       "bboxes": {
-        "16": [
-          462.75,
-          180.75,
-          480.0,
-          224.25
+        "18": [
+          40.5,
+          182.90625,
+          61.03125,
+          237.75
         ],
         "0": [
-          461.3999938964844,
-          175.49998474121094,
-          479.0,
-          229.5
+          40.29999923706055,
+          174.49998474121094,
+          60.70000076293945,
+          240.49998474121094
         ]
       },
       "centroids": {
-        "16": [
-          471.7926267281106,
-          203.3056835637481
+        "18": [
+          50.32951289398281,
+          205.5028653295129
         ],
         "0": [
-          470.65761511216056,
-          196.97166469893742
+          56.96124031007752,
+          206.96899224806202
         ]
       },
       "mask_paths": {
-        "16": "data\\intermediate\\masks\\frame_000016\\instance_0029.png",
+        "18": "data\\intermediate\\masks\\frame_000018\\instance_0029.png",
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0029.png"
       }
     },
     "30": {
       "id": 30,
-      "label": "person",
+      "label": "car",
       "first_frame": 0,
-      "last_frame": 16,
+      "last_frame": 29,
       "keyframes": [
-        "data\\extracted_frames\\frame_000016.png"
+        "data\\extracted_frames\\frame_000024.png",
+        "data\\extracted_frames\\frame_000029.png"
       ],
       "keyframe_indices": [
-        16
+        24,
+        29
       ],
       "bboxes": {
-        "16": [
-          9.8671875,
-          183.9375,
-          26.15625,
-          242.8125
+        "24": [
+          204.75,
+          196.5,
+          231.75,
+          221.25
+        ],
+        "29": [
+          208.125,
+          205.125,
+          235.125,
+          228.375
         ],
         "0": [
-          9.300000190734863,
-          179.29998779296875,
-          29.700000762939453,
-          247.69998168945312
+          202.39999389648438,
+          194.79998779296875,
+          233.60000610351562,
+          221.19998168945312
         ]
       },
       "centroids": {
-        "16": [
-          20.333806818181817,
-          209.2784090909091
+        "24": [
+          216.60299625468164,
+          207.7453183520599
+        ],
+        "29": [
+          220.7752380952381,
+          215.4247619047619
         ],
         "0": [
-          23.577164366373903,
-          204.79673776662483
+          214.80324543610547,
+          207.31643002028397
         ]
       },
       "mask_paths": {
-        "16": "data\\intermediate\\masks\\frame_000016\\instance_0030.png",
+        "24": "data\\intermediate\\masks\\frame_000024\\instance_0030.png",
+        "29": "data\\intermediate\\masks\\frame_000029\\instance_0030.png",
         "0": "data\\intermediate\\masks\\frame_000000\\instance_0030.png"
       }
     },
     "31": {
       "id": 31,
-      "label": "person",
-      "first_frame": 0,
-      "last_frame": 20,
-      "keyframes": [
-        "data\\extracted_frames\\frame_000020.png"
-      ],
-      "keyframe_indices": [
-        20
-      ],
-      "bboxes": {
-        "20": [
-          119.4375,
-          194.0625,
-          133.3125,
-          235.6875
-        ],
-        "0": [
-          117.69999694824219,
-          186.6999969482422,
-          133.3000030517578,
-          238.29998779296875
-        ]
-      },
-      "centroids": {
-        "20": [
-          125.8788501026694,
-          213.1088295687885
-        ],
-        "0": [
-          126.79794871794871,
-          210.97128205128206
-        ]
-      },
-      "mask_paths": {
-        "20": "data\\intermediate\\masks\\frame_000020\\instance_0031.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0031.png"
-      }
-    },
-    "32": {
-      "id": 32,
-      "label": "person",
-      "first_frame": 0,
-      "last_frame": 20,
-      "keyframes": [
-        "data\\extracted_frames\\frame_000020.png"
-      ],
-      "keyframe_indices": [
-        20
-      ],
-      "bboxes": {
-        "20": [
-          36.609375,
-          183.375,
-          56.296875,
-          236.625
-        ],
-        "0": [
-          35.099998474121094,
-          175.69998168945312,
-          57.900001525878906,
-          239.29998779296875
-        ]
-      },
-      "centroids": {
-        "20": [
-          45.742574257425744,
-          205.83734087694484
-        ],
-        "0": [
-          50.66424535916061,
-          212.91444713478612
-        ]
-      },
-      "mask_paths": {
-        "20": "data\\intermediate\\masks\\frame_000020\\instance_0032.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0032.png"
-      }
-    },
-    "33": {
-      "id": 33,
-      "label": "person",
-      "first_frame": 0,
-      "last_frame": 29,
-      "keyframes": [
-        "data\\extracted_frames\\frame_000020.png",
-        "data\\extracted_frames\\frame_000024.png",
-        "data\\extracted_frames\\frame_000028.png",
-        "data\\extracted_frames\\frame_000029.png"
-      ],
-      "keyframe_indices": [
-        20,
-        24,
-        28,
-        29
-      ],
-      "bboxes": {
-        "20": [
-          386.625,
-          176.90625,
-          479.625,
-          359.25
-        ],
-        "24": [
-          324.75,
-          162.28125,
-          480.0,
-          359.625
-        ],
-        "28": [
-          256.875,
-          177.0,
-          441.375,
-          359.625
-        ],
-        "29": [
-          248.625,
-          176.25,
-          423.375,
-          359.625
-        ],
-        "0": [
-          377.79998779296875,
-          145.60000610351562,
-          479.0,
-          359.0
-        ]
-      },
-      "centroids": {
-        "20": [
-          439.87506906077346,
-          263.96726519337017
-        ],
-        "24": [
-          394.9966145574032,
-          275.7097978691626
-        ],
-        "28": [
-          341.2120130374049,
-          276.8569765637126
-        ],
-        "29": [
-          331.71815230570655,
-          273.5312707787382
-        ],
-        "0": [
-          406.3098012911881,
-          266.82812106984153
-        ]
-      },
-      "mask_paths": {
-        "20": "data\\intermediate\\masks\\frame_000020\\instance_0033.png",
-        "24": "data\\intermediate\\masks\\frame_000024\\instance_0033.png",
-        "28": "data\\intermediate\\masks\\frame_000028\\instance_0033.png",
-        "29": "data\\intermediate\\masks\\frame_000029\\instance_0033.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0033.png"
-      }
-    },
-    "34": {
-      "id": 34,
-      "label": "person",
-      "first_frame": 0,
-      "last_frame": 24,
-      "keyframes": [
-        "data\\extracted_frames\\frame_000020.png",
-        "data\\extracted_frames\\frame_000024.png"
-      ],
-      "keyframe_indices": [
-        20,
-        24
-      ],
-      "bboxes": {
-        "20": [
-          0.5859375,
-          185.4375,
-          13.828125,
-          242.8125
-        ],
-        "24": [
-          0.03515625,
-          185.90625,
-          11.0625,
-          244.5
-        ],
-        "0": [
-          0.0,
-          180.39999389648438,
-          16.399999618530273,
-          247.5999755859375
-        ]
-      },
-      "centroids": {
-        "20": [
-          7.6,
-          211.6051282051282
-        ],
-        "24": [
-          3.596026490066225,
-          213.4812362030905
-        ],
-        "0": [
-          7.381944444444445,
-          209.3900462962963
-        ]
-      },
-      "mask_paths": {
-        "20": "data\\intermediate\\masks\\frame_000020\\instance_0034.png",
-        "24": "data\\intermediate\\masks\\frame_000024\\instance_0034.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0034.png"
-      }
-    },
-    "35": {
-      "id": 35,
-      "label": "tree",
-      "first_frame": 0,
-      "last_frame": 29,
-      "keyframes": [
-        "data\\extracted_frames\\frame_000020.png",
-        "data\\extracted_frames\\frame_000024.png",
-        "data\\extracted_frames\\frame_000028.png",
-        "data\\extracted_frames\\frame_000029.png"
-      ],
-      "keyframe_indices": [
-        20,
-        24,
-        28,
-        29
-      ],
-      "bboxes": {
-        "20": [
-          295.6765441894531,
-          0.08170318603515625,
-          453.8790588378906,
-          165.53384399414062
-        ],
-        "24": [
-          284.62603759765625,
-          0.05319976806640625,
-          442.4136962890625,
-          166.49386596679688
-        ],
-        "28": [
-          272.5435791015625,
-          0.17969512939453125,
-          429.60943603515625,
-          168.41128540039062
-        ],
-        "29": [
-          270.2564697265625,
-          0.16710662841796875,
-          426.11407470703125,
-          166.73712158203125
-        ],
-        "0": [
-          286.3999938964844,
-          0.0,
-          461.6000061035156,
-          176.0
-        ]
-      },
-      "centroids": {
-        "20": [
-          372.570717884131,
-          64.33337531486146
-        ],
-        "24": [
-          363.49303869192164,
-          67.09154929577464
-        ],
-        "28": [
-          348.9316244712419,
-          64.60186880484879
-        ],
-        "29": [
-          463.98073555166377,
-          176.78984238178634
-        ],
-        "0": [
-          385.84886720502465,
-          66.5629205921938
-        ]
-      },
-      "mask_paths": {
-        "20": "data\\intermediate\\masks\\frame_000020\\instance_0035.png",
-        "24": "data\\intermediate\\masks\\frame_000024\\instance_0035.png",
-        "28": "data\\intermediate\\masks\\frame_000028\\instance_0035.png",
-        "29": "data\\intermediate\\masks\\frame_000029\\instance_0035.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0035.png"
-      }
-    },
-    "36": {
-      "id": 36,
-      "label": "person",
-      "first_frame": 0,
-      "last_frame": 24,
-      "keyframes": [
-        "data\\extracted_frames\\frame_000024.png"
-      ],
-      "keyframe_indices": [
-        24
-      ],
-      "bboxes": {
-        "24": [
-          435.0,
-          176.4375,
-          480.0,
-          279.9375
-        ],
-        "0": [
-          436.1000061035156,
-          165.79998779296875,
-          479.0,
-          288.20001220703125
-        ]
-      },
-      "centroids": {
-        "24": [
-          458.6435739721593,
-          221.6089349303982
-        ],
-        "0": [
-          464.16752577319585,
-          225.65868924889543
-        ]
-      },
-      "mask_paths": {
-        "24": "data\\intermediate\\masks\\frame_000024\\instance_0036.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0036.png"
-      }
-    },
-    "37": {
-      "id": 37,
       "label": "person",
       "first_frame": 0,
       "last_frame": 24,
@@ -2635,29 +1941,25 @@
           220.9371196754564
         ],
         "0": [
-          194.07788944723617,
-          226.56281407035175
+          193.94366197183098,
+          227.09475032010243
         ]
       },
       "mask_paths": {
-        "24": "data\\intermediate\\masks\\frame_000024\\instance_0037.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0037.png"
+        "24": "data\\intermediate\\masks\\frame_000024\\instance_0031.png",
+        "0": "data\\intermediate\\masks\\frame_000000\\instance_0031.png"
       }
     },
-    "38": {
-      "id": 38,
+    "32": {
+      "id": 32,
       "label": "person",
       "first_frame": 0,
-      "last_frame": 29,
+      "last_frame": 24,
       "keyframes": [
-        "data\\extracted_frames\\frame_000024.png",
-        "data\\extracted_frames\\frame_000028.png",
-        "data\\extracted_frames\\frame_000029.png"
+        "data\\extracted_frames\\frame_000024.png"
       ],
       "keyframe_indices": [
-        24,
-        28,
-        29
+        24
       ],
       "bboxes": {
         "24": [
@@ -2665,18 +1967,6 @@
           248.4375,
           480.0,
           321.1875
-        ],
-        "28": [
-          419.25,
-          211.3125,
-          480.0,
-          359.4375
-        ],
-        "29": [
-          415.5,
-          212.625,
-          480.0,
-          359.625
         ],
         "0": [
           440.5,
@@ -2690,81 +1980,18 @@
           464.10229645093943,
           283.5490605427975
         ],
-        "28": [
-          457.0655984919887,
-          298.88689915174365
-        ],
-        "29": [
-          452.57578676942836,
-          304.75594091201026
-        ],
         "0": [
           462.23381836427495,
           278.1695935775213
         ]
       },
       "mask_paths": {
-        "24": "data\\intermediate\\masks\\frame_000024\\instance_0038.png",
-        "28": "data\\intermediate\\masks\\frame_000028\\instance_0038.png",
-        "29": "data\\intermediate\\masks\\frame_000029\\instance_0038.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0038.png"
+        "24": "data\\intermediate\\masks\\frame_000024\\instance_0032.png",
+        "0": "data\\intermediate\\masks\\frame_000000\\instance_0032.png"
       }
     },
-    "39": {
-      "id": 39,
-      "label": "person",
-      "first_frame": 0,
-      "last_frame": 28,
-      "keyframes": [
-        "data\\extracted_frames\\frame_000024.png",
-        "data\\extracted_frames\\frame_000028.png"
-      ],
-      "keyframe_indices": [
-        24,
-        28
-      ],
-      "bboxes": {
-        "24": [
-          131.15625,
-          193.5,
-          145.59375,
-          237.0
-        ],
-        "28": [
-          133.125,
-          194.625,
-          145.5,
-          229.125
-        ],
-        "0": [
-          128.60000610351562,
-          188.79998779296875,
-          145.39999389648438,
-          239.19998168945312
-        ]
-      },
-      "centroids": {
-        "24": [
-          137.57256461232603,
-          212.6858846918489
-        ],
-        "28": [
-          137.37175792507205,
-          210.14409221902017
-        ],
-        "0": [
-          135.6726457399103,
-          214.152466367713
-        ]
-      },
-      "mask_paths": {
-        "24": "data\\intermediate\\masks\\frame_000024\\instance_0039.png",
-        "28": "data\\intermediate\\masks\\frame_000028\\instance_0039.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0039.png"
-      }
-    },
-    "40": {
-      "id": 40,
+    "33": {
+      "id": 33,
       "label": "person",
       "first_frame": 0,
       "last_frame": 24,
@@ -2794,17 +2021,17 @@
           213.71486761710796
         ],
         "0": [
-          113.39509202453988,
-          211.2993865030675
+          113.41299019607843,
+          211.29044117647058
         ]
       },
       "mask_paths": {
-        "24": "data\\intermediate\\masks\\frame_000024\\instance_0040.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0040.png"
+        "24": "data\\intermediate\\masks\\frame_000024\\instance_0033.png",
+        "0": "data\\intermediate\\masks\\frame_000000\\instance_0033.png"
       }
     },
-    "41": {
-      "id": 41,
+    "34": {
+      "id": 34,
       "label": "handbag",
       "first_frame": 0,
       "last_frame": 24,
@@ -2839,12 +2066,12 @@
         ]
       },
       "mask_paths": {
-        "24": "data\\intermediate\\masks\\frame_000024\\instance_0041.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0041.png"
+        "24": "data\\intermediate\\masks\\frame_000024\\instance_0034.png",
+        "0": "data\\intermediate\\masks\\frame_000000\\instance_0034.png"
       }
     },
-    "42": {
-      "id": 42,
+    "35": {
+      "id": 35,
       "label": "person",
       "first_frame": 0,
       "last_frame": 24,
@@ -2874,17 +2101,57 @@
           241.83660392470966
         ],
         "0": [
-          302.553795379538,
-          233.7815181518152
+          299.4250884781754,
+          248.98898938261897
         ]
       },
       "mask_paths": {
-        "24": "data\\intermediate\\masks\\frame_000024\\instance_0042.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0042.png"
+        "24": "data\\intermediate\\masks\\frame_000024\\instance_0035.png",
+        "0": "data\\intermediate\\masks\\frame_000000\\instance_0035.png"
       }
     },
-    "43": {
-      "id": 43,
+    "36": {
+      "id": 36,
+      "label": "person",
+      "first_frame": 0,
+      "last_frame": 24,
+      "keyframes": [
+        "data\\extracted_frames\\frame_000024.png"
+      ],
+      "keyframe_indices": [
+        24
+      ],
+      "bboxes": {
+        "24": [
+          0.03515625,
+          185.90625,
+          11.0625,
+          244.5
+        ],
+        "0": [
+          0.0,
+          179.0999755859375,
+          11.0,
+          249.89999389648438
+        ]
+      },
+      "centroids": {
+        "24": [
+          3.596026490066225,
+          213.4812362030905
+        ],
+        "0": [
+          5.34181240063593,
+          207.92845786963434
+        ]
+      },
+      "mask_paths": {
+        "24": "data\\intermediate\\masks\\frame_000024\\instance_0036.png",
+        "0": "data\\intermediate\\masks\\frame_000000\\instance_0036.png"
+      }
+    },
+    "37": {
+      "id": 37,
       "label": "person",
       "first_frame": 0,
       "last_frame": 24,
@@ -2919,13 +2186,13 @@
         ]
       },
       "mask_paths": {
-        "24": "data\\intermediate\\masks\\frame_000024\\instance_0043.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0043.png"
+        "24": "data\\intermediate\\masks\\frame_000024\\instance_0037.png",
+        "0": "data\\intermediate\\masks\\frame_000000\\instance_0037.png"
       }
     },
-    "44": {
-      "id": 44,
-      "label": "handbag",
+    "38": {
+      "id": 38,
+      "label": "road street",
       "first_frame": 0,
       "last_frame": 24,
       "keyframes": [
@@ -2936,53 +2203,45 @@
       ],
       "bboxes": {
         "24": [
-          253.875,
-          240.75,
-          308.25,
-          315.75
+          0.2652130126953125,
+          200.13967895507812,
+          351.33685302734375,
+          359.0
         ],
         "0": [
-          251.0,
-          231.39999389648438,
-          311.0,
-          322.5999755859375
+          0.0,
+          208.29998779296875,
+          367.3999938964844,
+          359.0
         ]
       },
       "centroids": {
         "24": [
-          280.9083686440678,
-          289.78919491525426
+          173.83427128107414,
+          307.8655559002083
         ],
         "0": [
-          296.43790012804095,
-          279.98911651728554
+          185.6732815912999,
+          302.8183761676814
         ]
       },
       "mask_paths": {
-        "24": "data\\intermediate\\masks\\frame_000024\\instance_0044.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0044.png"
+        "24": "data\\intermediate\\masks\\frame_000024\\instance_0038.png",
+        "0": "data\\intermediate\\masks\\frame_000000\\instance_0038.png"
       }
     },
-    "45": {
-      "id": 45,
+    "39": {
+      "id": 39,
       "label": "person",
       "first_frame": 0,
       "last_frame": 29,
       "keyframes": [
-        "data\\extracted_frames\\frame_000028.png",
         "data\\extracted_frames\\frame_000029.png"
       ],
       "keyframe_indices": [
-        28,
         29
       ],
       "bboxes": {
-        "28": [
-          351.375,
-          160.78125,
-          418.125,
-          305.625
-        ],
         "29": [
           347.25,
           160.59375,
@@ -2990,158 +2249,119 @@
           315.75
         ],
         "0": [
-          349.6000061035156,
-          146.3000030517578,
-          426.3999938964844,
-          322.699951171875
+          342.3999938964844,
+          145.5,
+          421.6000061035156,
+          331.4999694824219
         ]
       },
       "centroids": {
-        "28": [
-          386.9746573571244,
-          236.25239203516938
-        ],
         "29": [
           380.12492622467045,
           239.11292543773362
         ],
         "0": [
-          403.90698149851784,
-          250.31902279464376
+          400.25523857611716,
+          243.7678616510982
         ]
       },
       "mask_paths": {
-        "28": "data\\intermediate\\masks\\frame_000028\\instance_0045.png",
-        "29": "data\\intermediate\\masks\\frame_000029\\instance_0045.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0045.png"
+        "29": "data\\intermediate\\masks\\frame_000029\\instance_0039.png",
+        "0": "data\\intermediate\\masks\\frame_000000\\instance_0039.png"
       }
     },
-    "46": {
-      "id": 46,
-      "label": "car",
-      "first_frame": 0,
-      "last_frame": 29,
-      "keyframes": [
-        "data\\extracted_frames\\frame_000028.png",
-        "data\\extracted_frames\\frame_000029.png"
-      ],
-      "keyframe_indices": [
-        28,
-        29
-      ],
-      "bboxes": {
-        "28": [
-          211.5,
-          204.9375,
-          237.75,
-          228.5625
-        ],
-        "29": [
-          208.125,
-          205.125,
-          235.125,
-          228.375
-        ],
-        "0": [
-          210.8000030517578,
-          200.60000610351562,
-          237.1999969482422,
-          229.3999786376953
-        ]
-      },
-      "centroids": {
-        "28": [
-          223.67634854771785,
-          215.3402489626556
-        ],
-        "29": [
-          220.7752380952381,
-          215.4247619047619
-        ],
-        "0": [
-          221.3234265734266,
-          216.9458041958042
-        ]
-      },
-      "mask_paths": {
-        "28": "data\\intermediate\\masks\\frame_000028\\instance_0046.png",
-        "29": "data\\intermediate\\masks\\frame_000029\\instance_0046.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0046.png"
-      }
-    },
-    "47": {
-      "id": 47,
-      "label": "handbag",
-      "first_frame": 0,
-      "last_frame": 29,
-      "keyframes": [
-        "data\\extracted_frames\\frame_000028.png",
-        "data\\extracted_frames\\frame_000029.png"
-      ],
-      "keyframe_indices": [
-        28,
-        29
-      ],
-      "bboxes": {
-        "28": [
-          159.9375,
-          205.5,
-          183.5625,
-          263.25
-        ],
-        "29": [
-          159.375,
-          202.125,
-          180.375,
-          263.625
-        ],
-        "0": [
-          156.89999389648438,
-          199.0999755859375,
-          182.10000610351562,
-          269.8999938964844
-        ]
-      },
-      "centroids": {
-        "28": [
-          170.94929245283018,
-          239.32311320754718
-        ],
-        "29": [
-          168.6219119226638,
-          236.26852846401718
-        ],
-        "0": [
-          170.51451612903224,
-          236.93387096774194
-        ]
-      },
-      "mask_paths": {
-        "28": "data\\intermediate\\masks\\frame_000028\\instance_0047.png",
-        "29": "data\\intermediate\\masks\\frame_000029\\instance_0047.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0047.png"
-      }
-    },
-    "48": {
-      "id": 48,
+    "40": {
+      "id": 40,
       "label": "person",
       "first_frame": 0,
       "last_frame": 29,
       "keyframes": [
-        "data\\extracted_frames\\frame_000028.png",
         "data\\extracted_frames\\frame_000029.png"
       ],
       "keyframe_indices": [
-        28,
         29
       ],
       "bboxes": {
-        "28": [
-          94.875,
-          195.0,
-          109.875,
-          238.875
+        "29": [
+          415.5,
+          212.625,
+          480.0,
+          359.625
         ],
+        "0": [
+          414.1000061035156,
+          207.1999969482422,
+          479.0,
+          359.0
+        ]
+      },
+      "centroids": {
+        "29": [
+          452.57578676942836,
+          304.75594091201026
+        ],
+        "0": [
+          461.65444826269567,
+          286.31156930126
+        ]
+      },
+      "mask_paths": {
+        "29": "data\\intermediate\\masks\\frame_000029\\instance_0040.png",
+        "0": "data\\intermediate\\masks\\frame_000000\\instance_0040.png"
+      }
+    },
+    "41": {
+      "id": 41,
+      "label": "car",
+      "first_frame": 0,
+      "last_frame": 29,
+      "keyframes": [
+        "data\\extracted_frames\\frame_000029.png"
+      ],
+      "keyframe_indices": [
+        29
+      ],
+      "bboxes": {
+        "29": [
+          190.125,
+          199.5,
+          215.25,
+          221.25
+        ],
+        "0": [
+          187.60000610351562,
+          195.79998779296875,
+          216.39999389648438,
+          222.1999969482422
+        ]
+      },
+      "centroids": {
+        "29": [
+          201.24435318275155,
+          208.81314168377824
+        ],
+        "0": [
+          203.8095909732017,
+          209.787023977433
+        ]
+      },
+      "mask_paths": {
+        "29": "data\\intermediate\\masks\\frame_000029\\instance_0041.png",
+        "0": "data\\intermediate\\masks\\frame_000000\\instance_0041.png"
+      }
+    },
+    "42": {
+      "id": 42,
+      "label": "person",
+      "first_frame": 0,
+      "last_frame": 29,
+      "keyframes": [
+        "data\\extracted_frames\\frame_000029.png"
+      ],
+      "keyframe_indices": [
+        29
+      ],
+      "bboxes": {
         "29": [
           91.640625,
           197.25,
@@ -3149,52 +2369,39 @@
           239.25
         ],
         "0": [
-          94.69999694824219,
-          189.69998168945312,
-          110.30000305175781,
-          241.3000030517578
+          91.69999694824219,
+          189.59999084472656,
+          107.30000305175781,
+          242.3999786376953
         ]
       },
       "centroids": {
-        "28": [
-          102.31340206185567,
-          215.2659793814433
-        ],
         "29": [
           99.61505376344086,
           215.5247311827957
         ],
         "0": [
-          103.38344226579521,
-          215.0631808278867
+          99.25788288288288,
+          214.74099099099098
         ]
       },
       "mask_paths": {
-        "28": "data\\intermediate\\masks\\frame_000028\\instance_0048.png",
-        "29": "data\\intermediate\\masks\\frame_000029\\instance_0048.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0048.png"
+        "29": "data\\intermediate\\masks\\frame_000029\\instance_0042.png",
+        "0": "data\\intermediate\\masks\\frame_000000\\instance_0042.png"
       }
     },
-    "49": {
-      "id": 49,
+    "43": {
+      "id": 43,
       "label": "person",
       "first_frame": 0,
       "last_frame": 29,
       "keyframes": [
-        "data\\extracted_frames\\frame_000028.png",
         "data\\extracted_frames\\frame_000029.png"
       ],
       "keyframe_indices": [
-        28,
         29
       ],
       "bboxes": {
-        "28": [
-          168.5625,
-          194.25,
-          193.125,
-          249.375
-        ],
         "29": [
           172.6875,
           195.75,
@@ -3202,52 +2409,39 @@
           250.5
         ],
         "0": [
-          169.0,
-          189.60000610351562,
-          193.0,
-          254.39999389648438
+          173.60000610351562,
+          190.59999084472656,
+          190.39999389648438,
+          255.3999786376953
         ]
       },
       "centroids": {
-        "28": [
-          182.6347941567065,
-          217.83930942895086
-        ],
         "29": [
           182.25636672325976,
           220.47707979626486
         ],
         "0": [
-          177.39253187613843,
-          225.65573770491804
+          177.88128772635815,
+          227.2313883299799
         ]
       },
       "mask_paths": {
-        "28": "data\\intermediate\\masks\\frame_000028\\instance_0049.png",
-        "29": "data\\intermediate\\masks\\frame_000029\\instance_0049.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0049.png"
+        "29": "data\\intermediate\\masks\\frame_000029\\instance_0043.png",
+        "0": "data\\intermediate\\masks\\frame_000000\\instance_0043.png"
       }
     },
-    "50": {
-      "id": 50,
+    "44": {
+      "id": 44,
       "label": "person",
       "first_frame": 0,
       "last_frame": 29,
       "keyframes": [
-        "data\\extracted_frames\\frame_000028.png",
         "data\\extracted_frames\\frame_000029.png"
       ],
       "keyframe_indices": [
-        28,
         29
       ],
       "bboxes": {
-        "28": [
-          121.6875,
-          195.0,
-          135.9375,
-          237.0
-        ],
         "29": [
           117.1875,
           194.25,
@@ -3255,105 +2449,79 @@
           237.375
         ],
         "0": [
-          118.59999084472656,
+          114.4000015258789,
           189.79998779296875,
-          135.39999389648438,
+          133.60000610351562,
           240.19998168945312
         ]
       },
       "centroids": {
-        "28": [
-          127.03088803088804,
-          213.56756756756758
-        ],
         "29": [
           123.82740213523131,
           213.43772241992883
         ],
         "0": [
-          127.77754237288136,
-          213.20127118644066
+          124.09883720930233,
+          212.1611295681063
         ]
       },
       "mask_paths": {
-        "28": "data\\intermediate\\masks\\frame_000028\\instance_0050.png",
-        "29": "data\\intermediate\\masks\\frame_000029\\instance_0050.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0050.png"
+        "29": "data\\intermediate\\masks\\frame_000029\\instance_0044.png",
+        "0": "data\\intermediate\\masks\\frame_000000\\instance_0044.png"
       }
     },
-    "51": {
-      "id": 51,
-      "label": "traffic light",
+    "45": {
+      "id": 45,
+      "label": "handbag",
       "first_frame": 0,
       "last_frame": 29,
       "keyframes": [
-        "data\\extracted_frames\\frame_000028.png",
         "data\\extracted_frames\\frame_000029.png"
       ],
       "keyframe_indices": [
-        28,
         29
       ],
       "bboxes": {
-        "28": [
-          375.0,
-          137.625,
-          399.0,
-          171.375
-        ],
         "29": [
-          375.5625,
-          138.0,
-          396.75,
-          171.75
+          159.375,
+          202.125,
+          180.375,
+          263.625
         ],
         "0": [
-          371.6000061035156,
-          132.5,
-          400.3999938964844,
-          174.49998474121094
+          157.0,
+          195.99998474121094,
+          181.0,
+          268.0
         ]
       },
       "centroids": {
-        "28": [
-          387.1870397643593,
-          152.3136966126657
-        ],
         "29": [
-          377.91219512195124,
-          150.79024390243902
+          168.6219119226638,
+          236.26852846401718
         ],
         "0": [
-          378.9738058551618,
-          149.1617873651772
+          170.26365054602184,
+          236.09672386895477
         ]
       },
       "mask_paths": {
-        "28": "data\\intermediate\\masks\\frame_000028\\instance_0051.png",
-        "29": "data\\intermediate\\masks\\frame_000029\\instance_0051.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0051.png"
+        "29": "data\\intermediate\\masks\\frame_000029\\instance_0045.png",
+        "0": "data\\intermediate\\masks\\frame_000000\\instance_0045.png"
       }
     },
-    "52": {
-      "id": 52,
+    "46": {
+      "id": 46,
       "label": "traffic light",
       "first_frame": 0,
       "last_frame": 29,
       "keyframes": [
-        "data\\extracted_frames\\frame_000028.png",
         "data\\extracted_frames\\frame_000029.png"
       ],
       "keyframe_indices": [
-        28,
         29
       ],
       "bboxes": {
-        "28": [
-          386.25,
-          138.0,
-          399.75,
-          171.375
-        ],
         "29": [
           384.0,
           138.1875,
@@ -3361,74 +2529,69 @@
           171.375
         ],
         "0": [
-          382.6000061035156,
+          380.6000061035156,
           133.59999084472656,
-          399.3999938964844,
+          397.3999938964844,
           174.3999786376953
         ]
       },
       "centroids": {
-        "28": [
-          391.5388235294118,
-          153.18823529411765
-        ],
         "29": [
           388.54823529411766,
           153.5364705882353
         ],
         "0": [
-          392.0291005291005,
-          151.88888888888889
+          387.8772727272727,
+          153.58636363636364
         ]
       },
       "mask_paths": {
-        "28": "data\\intermediate\\masks\\frame_000028\\instance_0052.png",
-        "29": "data\\intermediate\\masks\\frame_000029\\instance_0052.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0052.png"
+        "29": "data\\intermediate\\masks\\frame_000029\\instance_0046.png",
+        "0": "data\\intermediate\\masks\\frame_000000\\instance_0046.png"
       }
     },
-    "53": {
-      "id": 53,
-      "label": "person",
+    "47": {
+      "id": 47,
+      "label": "traffic light",
       "first_frame": 0,
-      "last_frame": 28,
+      "last_frame": 29,
       "keyframes": [
-        "data\\extracted_frames\\frame_000028.png"
+        "data\\extracted_frames\\frame_000029.png"
       ],
       "keyframe_indices": [
-        28
+        29
       ],
       "bboxes": {
-        "28": [
-          180.0,
-          194.625,
-          192.9375,
-          251.25
+        "29": [
+          375.5625,
+          138.0,
+          396.75,
+          171.75
         ],
         "0": [
-          175.3000030517578,
-          170.89999389648438,
-          195.6999969482422,
-          256.1000061035156
+          371.20001220703125,
+          134.0999755859375,
+          392.79998779296875,
+          168.89999389648438
         ]
       },
       "centroids": {
-        "28": [
-          186.1478163493841,
-          211.35610302351623
+        "29": [
+          377.91219512195124,
+          150.79024390243902
         ],
         "0": [
-          187.72222222222223,
-          209.36888888888888
+          375.59016393442624,
+          148.8954918032787
         ]
       },
       "mask_paths": {
-        "28": "data\\intermediate\\masks\\frame_000028\\instance_0053.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0053.png"
+        "29": "data\\intermediate\\masks\\frame_000029\\instance_0047.png",
+        "0": "data\\intermediate\\masks\\frame_000000\\instance_0047.png"
       }
     },
-    "54": {
-      "id": 54,
+    "48": {
+      "id": 48,
       "label": "person",
       "first_frame": 0,
       "last_frame": 29,
@@ -3463,8 +2626,8 @@
         ]
       },
       "mask_paths": {
-        "29": "data\\intermediate\\masks\\frame_000029\\instance_0054.png",
-        "0": "data\\intermediate\\masks\\frame_000000\\instance_0054.png"
+        "29": "data\\intermediate\\masks\\frame_000029\\instance_0048.png",
+        "0": "data\\intermediate\\masks\\frame_000000\\instance_0048.png"
       }
     }
   }

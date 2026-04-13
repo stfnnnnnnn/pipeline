@@ -134,8 +134,7 @@ class GroundingDinoDetector:
 				label = str(item.get("label", "object")).strip()
 				if bbox.shape != (4,):
 					continue
-				score = float(item.get("score", 0.0))
-				out.append({"bbox_xyxy": bbox, "label": label, "score": score})
+				out.append({"bbox_xyxy": bbox, "label": label})
 			except Exception:
 				continue
 		return out

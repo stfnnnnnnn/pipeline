@@ -7,60 +7,17 @@ script_path: "scripts/gdino_worker.py"
 model_config: "configs/perception/grounding_dino/GroundingDINO_SwinB.cfg.py"
 model_weights: "models/checkpoints/grounding_dino/groundingdino_swinb_cogcoor.pth"
 device: "cuda"
-box_threshold: 0.25
-text_threshold: 0.20
+box_threshold: 0.35
+text_threshold: 0.25
 max_detections: 50
 box_pad_ratio: 0.15
 mask_selection: "area"
 area_weight: 0.4
-dense:
-  enabled: false
-  frame_stride: 1
-  iou_match: 0.4
-label_rules:
-  - match: "sky"
-    min_score: 0.45
-    min_box_area_ratio: 0.08
-    max_ymin_ratio: 0.50
-    pad_ratio: 0.05
-    mask_selection: "area"
-    area_weight: 0.6
-  - match: "building"
-    min_score: 0.35
-    min_box_area_ratio: 0.02
-    pad_ratio: 0.12
-    mask_selection: "area"
-    area_weight: 0.4
-  - match: "house"
-    min_score: 0.35
-    min_box_area_ratio: 0.02
-    pad_ratio: 0.12
-    mask_selection: "area"
-    area_weight: 0.4
-  - match: "apartment"
-    min_score: 0.35
-    min_box_area_ratio: 0.02
-    pad_ratio: 0.12
-    mask_selection: "area"
-    area_weight: 0.4
-  - match: "tree"
-    min_score: 0.45
-    min_box_area_ratio: 0.01
-    pad_ratio: 0.10
-    mask_selection: "area"
-    area_weight: 0.5
 prompts:
   - "building"
   - "house"
   - "tree"
   - "forest"
-  - "apartment"
-  - "tower"
-  - "structure"
-  - "facade"
-  - "roof"
-  - "foliage"
-  - "vegetation"
   - "road"
   - "street"
   - "sidewalk"
