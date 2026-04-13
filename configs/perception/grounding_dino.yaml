@@ -1,0 +1,75 @@
+# GroundingDINO Configuration (SwinB)
+# Runs via scripts/gdino_worker.py in a separate conda env.
+enabled: true
+env_name: "gdino310"
+conda_exe: "C:\\Users\\LENOVO\\miniconda3\\condabin\\conda.bat"
+script_path: "scripts/gdino_worker.py"
+model_config: "configs/perception/grounding_dino/GroundingDINO_SwinB.cfg.py"
+model_weights: "models/checkpoints/grounding_dino/groundingdino_swinb_cogcoor.pth"
+device: "cuda"
+box_threshold: 0.25
+text_threshold: 0.20
+max_detections: 50
+box_pad_ratio: 0.15
+mask_selection: "area"
+area_weight: 0.4
+dense:
+  enabled: false
+  frame_stride: 1
+  iou_match: 0.4
+label_rules:
+  - match: "sky"
+    min_score: 0.45
+    min_box_area_ratio: 0.08
+    max_ymin_ratio: 0.50
+    pad_ratio: 0.05
+    mask_selection: "area"
+    area_weight: 0.6
+  - match: "building"
+    min_score: 0.35
+    min_box_area_ratio: 0.02
+    pad_ratio: 0.12
+    mask_selection: "area"
+    area_weight: 0.4
+  - match: "house"
+    min_score: 0.35
+    min_box_area_ratio: 0.02
+    pad_ratio: 0.12
+    mask_selection: "area"
+    area_weight: 0.4
+  - match: "apartment"
+    min_score: 0.35
+    min_box_area_ratio: 0.02
+    pad_ratio: 0.12
+    mask_selection: "area"
+    area_weight: 0.4
+  - match: "tree"
+    min_score: 0.45
+    min_box_area_ratio: 0.01
+    pad_ratio: 0.10
+    mask_selection: "area"
+    area_weight: 0.5
+prompts:
+  - "building"
+  - "house"
+  - "tree"
+  - "forest"
+  - "apartment"
+  - "tower"
+  - "structure"
+  - "facade"
+  - "roof"
+  - "foliage"
+  - "vegetation"
+  - "road"
+  - "street"
+  - "sidewalk"
+  - "sky"
+  - "wall"
+  - "grass"
+  - "mountain"
+  - "water"
+# DLL dirs required on Windows before importing groundingdino._C
+# Update these if your paths differ.
+torch_lib_dir: "C:\\Users\\LENOVO\\miniconda3\\envs\\gdino310\\Lib\\site-packages\\torch\\lib"
+cuda_bin_dir: "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.4\\bin"

@@ -23,6 +23,7 @@ import yaml
 from .yolo_detector import YoloV8Detector
 from .sam_segmenter import Sam2Masker
 from .cotracker_wrapper import CoTrackerPersistentTracker
+from .grounding_dino_detector import GroundingDinoDetector
 
 
 @dataclass
@@ -36,6 +37,14 @@ class Instance:
     bboxes: Dict[int, List[float]] = field(default_factory=dict)
     centroids: Dict[int, List[float]] = field(default_factory=dict)
     mask_paths: Dict[int, str] = field(default_factory=dict)
+
+
+@dataclass
+class SimpleDetection:
+    bbox_xyxy: np.ndarray
+    label: str
+    score: float
+    source: str
 
 
 def _noop_progress(current: int, total: int, message: str) -> None:
@@ -219,7 +228,9 @@ def process_video_for_segmentation(
     yolo_model: str = "models/checkpoints/yolo/yolo11s.pt",
     yolo_conf: float = 0.25,
     yolo_iou: float = 0.6,
-    keyframe_stride: int = 12,
+    keyframe_stride: Optional[int] = None,
+    mask_frame_stride: Optional[int] = None,
+    remask_keyframes: bool = True,
     tracker_points_per_instance: int = 24,
     max_frames_per_chunk: Optional[int] = None,
     max_total_frames: Optional[int] = None,
@@ -232,12 +243,14 @@ def process_video_for_segmentation(
     device: str = "cuda",
     yolo_config_path: str = "configs/perception/yolo11_s.yaml",
     cotracker_config_path: str = "configs/perception/cotracker2.yaml",
+    grounding_dino_config_path: str = "configs/perception/grounding_dino.yaml",
 ) -> Dict[str, Any]:
     cb = progress_callback or _noop_progress
 
     # ---------- Config loading (YAML -> runtime args) ----------
     yolo_cfg = _load_yaml(yolo_config_path)
     cot_cfg = _load_yaml(cotracker_config_path)
+    gdino_cfg = _load_yaml(grounding_dino_config_path)
 
     yolo_model = str(yolo_cfg.get("model_path", yolo_model))
     yolo_conf = float(yolo_cfg.get("conf_threshold", yolo_conf))
@@ -256,13 +269,16 @@ def process_video_for_segmentation(
     box_pad_ratio = float(mask_cfg.get("box_pad_ratio", 0.06))
     mask_min_area = int(mask_cfg.get("min_area", 32))
     mask_kernel = int(mask_cfg.get("morph_kernel", 3))
+    id_match_iou = float(yolo_cfg.get("id_match_iou", 0.2))
 
     scene_cfg = yolo_cfg.get("scene_fallback", {})
     scene_enabled = False
+    scene_mode = "no_detections"
     scene_track = False
     scene_label = "scene"
     if isinstance(scene_cfg, dict):
         scene_enabled = bool(scene_cfg.get("enabled", False))
+        scene_mode = str(scene_cfg.get("mode", scene_mode))
         scene_track = bool(scene_cfg.get("track", False))
         scene_label = str(scene_cfg.get("label", scene_label))
 
@@ -271,9 +287,38 @@ def process_video_for_segmentation(
         if isinstance(cfg_labels, list):
             target_labels = [str(x) for x in cfg_labels]
 
+    gdino_detector = GroundingDinoDetector.from_config(grounding_dino_config_path, gdino_cfg)
+    gdino_box_pad_ratio = float(gdino_cfg.get("box_pad_ratio", box_pad_ratio))
+    gdino_mask_selection = str(gdino_cfg.get("mask_selection", "area"))
+    gdino_area_weight = float(gdino_cfg.get("area_weight", 0.4))
+    gdino_label_rules = gdino_cfg.get("label_rules", [])
+    if not isinstance(gdino_label_rules, list):
+        gdino_label_rules = []
+    gdino_dense_cfg = gdino_cfg.get("dense", {})
+    if not isinstance(gdino_dense_cfg, dict):
+        gdino_dense_cfg = {}
+    gdino_dense_enabled = bool(gdino_dense_cfg.get("enabled", False))
+    gdino_dense_stride = int(gdino_dense_cfg.get("frame_stride", 1))
+    gdino_dense_iou = float(gdino_dense_cfg.get("iou_match", 0.4))
+
     cotracker_checkpoint = str(cot_cfg.get("checkpoint", cotracker_checkpoint))
     tracker_points_per_instance = int(cot_cfg.get("points_per_instance", tracker_points_per_instance))
-    keyframe_stride = int(cot_cfg.get("keyframe_stride", keyframe_stride))
+
+    cfg_keyframe_stride = cot_cfg.get("keyframe_stride", None)
+    if keyframe_stride is None:
+        if isinstance(cfg_keyframe_stride, (int, float)):
+            keyframe_stride = int(cfg_keyframe_stride)
+        else:
+            keyframe_stride = 12
+    keyframe_stride = max(1, int(keyframe_stride))
+
+    if mask_frame_stride is None:
+        mask_frame_stride = 1
+    else:
+        mask_frame_stride = int(mask_frame_stride)
+    if mask_frame_stride <= 0:
+        mask_frame_stride = 1
+    remask_keyframes = bool(remask_keyframes)
 
     max_frames_per_chunk_cfg = cot_cfg.get("max_frames_per_chunk", None)
     if isinstance(max_frames_per_chunk_cfg, (int, float)):
@@ -375,9 +420,75 @@ def process_video_for_segmentation(
 
         prev_key_bboxes: Dict[int, np.ndarray] = {}
         instance_seed_points: Dict[int, np.ndarray] = {}
+        instance_seed_frames: Dict[int, int] = {}
         scene_instance_id: Optional[int] = None
+        gdino_instance_ids: set[int] = set()
+        gdino_last_bbox: Dict[int, np.ndarray] = {}
 
         sam2_chunk = _sam2_chunk_size(sam2_model_cfg, device)
+
+        def _nms_dets(dets_in: List[SimpleDetection], iou_thresh: float) -> List[SimpleDetection]:
+            if not dets_in:
+                return []
+            dets_sorted = sorted(dets_in, key=lambda d: d.score, reverse=True)
+            kept: List[SimpleDetection] = []
+            for det in dets_sorted:
+                keep = True
+                for other in kept:
+                    if _bbox_iou(det.bbox_xyxy, other.bbox_xyxy) >= iou_thresh:
+                        keep = False
+                        break
+                if keep:
+                    kept.append(det)
+            return kept
+
+        def _build_gdino_groups(
+            gdino_raw: List[Dict[str, Any]],
+            frame_h: int,
+            frame_w: int,
+        ) -> Dict[tuple, List[SimpleDetection]]:
+            grouped: Dict[tuple, List[SimpleDetection]] = {}
+            for gd in gdino_raw:
+                gd_label = str(gd.get("label", "")).strip()
+                gd_score = float(gd.get("score", 0.0))
+                gd_box = gd.get("bbox_xyxy", None)
+                if gd_box is None:
+                    continue
+                bbox = np.array(gd_box, dtype=np.float32)
+                x1, y1, x2, y2 = bbox.tolist()
+                bw, bh = max(0.0, x2 - x1), max(0.0, y2 - y1)
+                box_area_ratio = (bw * bh) / float(max(frame_w * frame_h, 1))
+                ymin_ratio = y1 / float(max(frame_h, 1))
+
+                rule = None
+                label_l = gd_label.lower()
+                for r in gdino_label_rules:
+                    if not isinstance(r, dict):
+                        continue
+                    match = str(r.get("match", "")).lower().strip()
+                    if match and match in label_l:
+                        rule = r
+                        break
+
+                min_score = float((rule or {}).get("min_score", 0.0))
+                min_box_area_ratio = float((rule or {}).get("min_box_area_ratio", 0.0))
+                max_ymin_ratio = (rule or {}).get("max_ymin_ratio", None)
+                if gd_score < min_score or box_area_ratio < min_box_area_ratio:
+                    continue
+                if max_ymin_ratio is not None and ymin_ratio > float(max_ymin_ratio):
+                    continue
+
+                pad_ratio = float((rule or {}).get("pad_ratio", gdino_box_pad_ratio))
+                selection = str((rule or {}).get("mask_selection", gdino_mask_selection))
+                area_weight = float((rule or {}).get("area_weight", gdino_area_weight))
+                key = (pad_ratio, selection, area_weight)
+                grouped.setdefault(key, []).append(
+                    SimpleDetection(bbox_xyxy=bbox, label=gd_label, score=gd_score, source="gdino")
+                )
+
+            for key, dets in list(grouped.items()):
+                grouped[key] = _nms_dets(dets, iou_thresh=0.7)
+            return grouped
 
         # ---------- Phase A ----------
         cb(0, 1, "Phase A: Loading YOLO + SAM2...")
@@ -387,9 +498,37 @@ def process_video_for_segmentation(
         cb(0, len(keyframes), "Phase A: keyframe detection + masks...")
         for i, fidx in enumerate(keyframes):
             frame = frames_bgr[fidx]
-            dets = detector.detect(frame, conf=yolo_conf, iou=yolo_iou, target_labels=label_set)
-            if not dets:
-                if scene_enabled:
+            yolo_raw = detector.detect(frame, conf=yolo_conf, iou=yolo_iou, target_labels=label_set)
+            yolo_dets = [
+                SimpleDetection(
+                    bbox_xyxy=d.bbox_xyxy,
+                    label=d.label,
+                    score=float(d.conf),
+                    source="yolo",
+                )
+                for d in yolo_raw
+            ]
+            yolo_dets = _nms_dets(yolo_dets, iou_thresh=0.7)
+            gdino_dets: List[SimpleDetection] = []
+            if gdino_detector is not None:
+                gdino_raw = gdino_detector.detect(frame_paths[fidx])
+                if label_aliases:
+                    for gd in gdino_raw:
+                        key = str(gd.get("label", "")).lower()
+                        if key in label_aliases:
+                            gd["label"] = label_aliases[key]
+                gdino_groups = _build_gdino_groups(gdino_raw, frame.shape[0], frame.shape[1])
+                for dets_group in gdino_groups.values():
+                    gdino_dets.extend(dets_group)
+
+            should_scene = False
+            if scene_enabled:
+                if scene_mode == "always":
+                    should_scene = True
+                elif not yolo_dets and not gdino_dets:
+                    should_scene = True
+
+            if should_scene:
                     h, w = frame.shape[:2]
                     scene_box = np.array([[0.0, 0.0, float(w - 1), float(h - 1)]], dtype=np.float32)
                     scene_masks = sam2.masks_from_boxes(
@@ -450,45 +589,90 @@ def process_video_for_segmentation(
                                 dtype=np.float32,
                             )
                         instance_seed_points[scene_instance_id] = pts
+                        instance_seed_frames[scene_instance_id] = fidx
 
                     cb(i + 1, len(keyframes), f"Keyframe {fidx}: scene fallback mask")
-                    continue
+                    if not yolo_dets and not gdino_dets:
+                        continue
 
+            if not yolo_dets and not gdino_dets:
                 cb(i + 1, len(keyframes), f"Keyframe {fidx}: no detections")
                 continue
 
             if label_aliases:
-                for det in dets:
+                for det in yolo_dets:
+                    key = det.label.lower()
+                    if key in label_aliases:
+                        det.label = label_aliases[key]
+                for det in gdino_dets:
                     key = det.label.lower()
                     if key in label_aliases:
                         det.label = label_aliases[key]
 
-            boxes = np.stack([d.bbox_xyxy for d in dets], axis=0).astype(np.float32)
-            h, w = frame.shape[:2]
-            refined_boxes = _refine_boxes(boxes, w, h, pad_ratio=box_pad_ratio)
-            masks_list: List[np.ndarray] = []
-            for s in range(0, len(refined_boxes), sam2_chunk):
-                chunk_boxes = refined_boxes[s : s + sam2_chunk]
-                chunk_masks = sam2.masks_from_boxes(
-                    frame,
-                    chunk_boxes,
-                    multimask_output=True,
-                    selection="score_area",
-                    area_weight=0.15,
-                )
-                if chunk_masks.size > 0:
-                    chunk_masks = np.stack(
-                        [
-                            _postprocess_mask(m.astype(np.uint8), min_area=mask_min_area, kernel=mask_kernel)
-                            for m in chunk_masks
-                        ],
-                        axis=0,
-                    ).astype(bool)
-                    chunk_masks = _resolve_mask_overlaps(chunk_masks)
-                masks_list.append(chunk_masks)
+            def _run_sam2_for_boxes(
+                masker: Sam2Masker,
+                boxes_in: np.ndarray,
+                pad_ratio_in: float,
+                selection_in: str,
+                area_weight_in: float,
+            ) -> np.ndarray:
+                if boxes_in.size == 0:
+                    return np.zeros((0, frame.shape[0], frame.shape[1]), dtype=bool)
+                h, w = frame.shape[:2]
+                refined = _refine_boxes(boxes_in, w, h, pad_ratio=pad_ratio_in)
+                masks_out: List[np.ndarray] = []
+                for s in range(0, len(refined), sam2_chunk):
+                    chunk_boxes = refined[s : s + sam2_chunk]
+                    chunk_masks = masker.masks_from_boxes(
+                        frame,
+                        chunk_boxes,
+                        multimask_output=True,
+                        selection=selection_in,
+                        area_weight=area_weight_in,
+                    )
+                    if chunk_masks.size > 0:
+                        chunk_masks = np.stack(
+                            [
+                                _postprocess_mask(
+                                    m.astype(np.uint8),
+                                    min_area=mask_min_area,
+                                    kernel=mask_kernel,
+                                )
+                                for m in chunk_masks
+                            ],
+                            axis=0,
+                        ).astype(bool)
+                        chunk_masks = _resolve_mask_overlaps(chunk_masks)
+                    masks_out.append(chunk_masks)
+                if masks_out:
+                    return np.concatenate(masks_out, axis=0)
+                return np.zeros((0, frame.shape[0], frame.shape[1]), dtype=bool)
 
+            dets: List[SimpleDetection | Any] = []
+            masks_list: List[np.ndarray] = []
+            if yolo_dets:
+                yolo_boxes = np.stack([d.bbox_xyxy for d in yolo_dets], axis=0).astype(np.float32)
+                yolo_masks = _run_sam2_for_boxes(sam2, yolo_boxes, box_pad_ratio, "score_area", 0.15)
+                dets.extend(yolo_dets)
+                masks_list.extend(list(yolo_masks))
+            if gdino_dets:
+                gdino_groups = _build_gdino_groups(
+                    [{"label": d.label, "score": d.score, "bbox_xyxy": d.bbox_xyxy} for d in gdino_dets],
+                    frame.shape[0],
+                    frame.shape[1],
+                )
+                for (pad_ratio, selection, area_weight), group in gdino_groups.items():
+                    if not group:
+                        continue
+                    group_boxes = np.stack([g.bbox_xyxy for g in group], axis=0).astype(np.float32)
+                    group_masks = _run_sam2_for_boxes(sam2, group_boxes, pad_ratio, selection, area_weight)
+                    for g, mask in zip(group, group_masks):
+                        dets.append(g)
+                        masks_list.append(mask)
+
+            h, w = frame.shape[:2]
             if masks_list:
-                masks = np.concatenate(masks_list, axis=0)
+                masks = np.stack(masks_list, axis=0)
             else:
                 masks = np.zeros((0, h, w), dtype=bool)
 
@@ -504,7 +688,7 @@ def process_video_for_segmentation(
                     if s > best_score:
                         best_score, best_id = s, iid
 
-                if best_id is not None and best_score >= 0.2 and best_id not in assigned:
+                if best_id is not None and best_score >= id_match_iou and best_id not in assigned:
                     iid = best_id
                 else:
                     iid = next_instance_id
@@ -515,6 +699,8 @@ def process_video_for_segmentation(
                         first_frame=fidx,
                         last_frame=fidx,
                     )
+                    if det.source == "gdino":
+                        gdino_instance_ids.add(iid)
 
                 inst = instances[iid]
                 inst.last_frame = max(inst.last_frame, fidx)
@@ -543,9 +729,12 @@ def process_video_for_segmentation(
                             dtype=np.float32,
                         )
                     instance_seed_points[iid] = pts
+                    instance_seed_frames[iid] = fidx
 
                 assigned.append(iid)
                 curr_id_to_bbox[iid] = det.bbox_xyxy.copy()
+                if det.source == "gdino":
+                    gdino_last_bbox[iid] = det.bbox_xyxy.copy()
 
             prev_key_bboxes = curr_id_to_bbox
             cb(i + 1, len(keyframes), f"Keyframe {fidx}: {len(dets)} detections")
@@ -562,6 +751,9 @@ def process_video_for_segmentation(
                 "fps": fps,
                 "resize_height": max_h,
                 "max_total_frames": max_total_frames,
+                "keyframe_stride": keyframe_stride,
+                "mask_frame_stride": mask_frame_stride,
+                "remask_keyframes": remask_keyframes,
                 "instances": {},
                 "frames_dir": str(frames_dir),
                 "masks_dir": str(masks_root),
@@ -585,7 +777,7 @@ def process_video_for_segmentation(
             device=device,
             max_frames_per_chunk=max_frames_per_chunk,
         )
-        tracked_points = tracker.track_points(frames_bgr, instance_seed_points)
+        tracked_points = tracker.track_points(frames_bgr, instance_seed_points, instance_seed_frames)
         del tracker
         _clear_gpu()
         cb(1, 1, "Phase B complete")
@@ -609,13 +801,67 @@ def process_video_for_segmentation(
         cb(0, 1, "Phase C: Loading SAM2...")
         sam2_final = Sam2Masker(model_cfg=sam2_model_cfg, checkpoint_path=sam2_checkpoint, device=device)
 
-        cb(0, total_frames, "Phase C: generating masks on all frames...")
+        mask_stride = max(1, int(mask_frame_stride))
+        skip_existing = not remask_keyframes
+        cb(0, total_frames, f"Phase C: generating masks (stride {mask_stride})...")
         for t in range(total_frames):
+            if mask_stride > 1 and (t % mask_stride != 0):
+                cb(t + 1, total_frames, f"Frame {t}: skipped (stride {mask_stride})")
+                continue
             frame = frames_bgr[t]
+            if gdino_dense_enabled and gdino_detector is not None and (t % max(1, gdino_dense_stride) == 0):
+                gdino_raw = gdino_detector.detect(frame_paths[t])
+                gdino_groups = _build_gdino_groups(gdino_raw, frame.shape[0], frame.shape[1])
+                for (pad_ratio, selection, area_weight), group in gdino_groups.items():
+                    if not group:
+                        continue
+                    group_boxes = np.stack([g.bbox_xyxy for g in group], axis=0).astype(np.float32)
+                    group_masks = _run_sam2_for_boxes(sam2_final, group_boxes, pad_ratio, selection, area_weight)
+                    for g, mask in zip(group, group_masks):
+                        match_id = None
+                        best_iou = 0.0
+                        for iid in gdino_instance_ids:
+                            if instances[iid].label != g.label:
+                                continue
+                            prev_box = gdino_last_bbox.get(iid, None)
+                            if prev_box is None:
+                                continue
+                            iou = _bbox_iou(g.bbox_xyxy, prev_box)
+                            if iou > best_iou:
+                                best_iou = iou
+                                match_id = iid
+                        if match_id is None or best_iou < gdino_dense_iou:
+                            match_id = next_instance_id
+                            next_instance_id += 1
+                            instances[match_id] = Instance(
+                                instance_id=match_id,
+                                label=g.label,
+                                first_frame=t,
+                                last_frame=t,
+                            )
+                            gdino_instance_ids.add(match_id)
+
+                        inst = instances[match_id]
+                        inst.first_frame = min(inst.first_frame, t)
+                        inst.last_frame = max(inst.last_frame, t)
+                        inst.keyframes.append(frame_paths[t])
+                        inst.keyframe_indices.append(t)
+                        inst.bboxes[t] = [float(v) for v in g.bbox_xyxy.tolist()]
+                        ctr = _mask_centroid(mask.astype(np.uint8))
+                        if ctr is not None:
+                            inst.centroids[t] = ctr
+
+                        frame_mask_dir = masks_root / f"frame_{t:06d}"
+                        inst.mask_paths[t] = _save_mask(
+                            mask.astype(np.uint8),
+                            frame_mask_dir / f"instance_{match_id:04d}.png",
+                            save_npy=save_npy_masks,
+                        )
+                        gdino_last_bbox[match_id] = g.bbox_xyxy.copy()
             frame_iids, frame_boxes = [], []
 
             for iid in instances.keys():
-                if t in instances[iid].mask_paths:
+                if skip_existing and t in instances[iid].mask_paths:
                     continue
                 if t in tracked_bboxes.get(iid, {}):
                     frame_iids.append(iid)
@@ -672,7 +918,10 @@ def process_video_for_segmentation(
             "total_frames": total_frames,
             "fps": fps,
             "resize_height": max_h,
-                "max_total_frames": max_total_frames,
+            "max_total_frames": max_total_frames,
+            "keyframe_stride": keyframe_stride,
+            "mask_frame_stride": mask_frame_stride,
+            "remask_keyframes": remask_keyframes,
             "frames_dir": str(frames_dir),
             "masks_dir": str(masks_root),
             "instances": {

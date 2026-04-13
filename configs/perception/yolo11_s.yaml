@@ -28,7 +28,9 @@ mask_refine:
   box_pad_ratio: 0.10
   min_area: 32
   morph_kernel: 1
+id_match_iou: 0.3
 scene_fallback:
   enabled: true
+  mode: "no_detections"
   track: false
   label: "scene"

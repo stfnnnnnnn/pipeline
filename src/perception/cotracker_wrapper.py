@@ -82,27 +82,37 @@ class CoTrackerPersistentTracker:
         self,
         frames_bgr: List[np.ndarray],
         instance_seed_points: Dict[int, np.ndarray],
+        instance_seed_frames: Optional[Dict[int, int]] = None,
     ) -> Dict[int, np.ndarray]:
         if len(frames_bgr) == 0:
             return {}
 
         if self.max_frames_per_chunk and len(frames_bgr) > self.max_frames_per_chunk:
+            if instance_seed_frames and any(int(v) > 0 for v in instance_seed_frames.values()):
+                return self._track_points_batch(frames_bgr, instance_seed_points, instance_seed_frames)
             return self._track_points_chunked(frames_bgr, instance_seed_points)
 
-        return self._track_points_batch(frames_bgr, instance_seed_points)
+        return self._track_points_batch(frames_bgr, instance_seed_points, instance_seed_frames)
 
     def _track_points_batch(
         self,
         frames_bgr: List[np.ndarray],
         instance_seed_points: Dict[int, np.ndarray],
+        instance_seed_frames: Optional[Dict[int, int]] = None,
     ) -> Dict[int, np.ndarray]:
         global_points: List[np.ndarray] = []
+        global_t0: List[np.ndarray] = []
         slices: Dict[int, Tuple[int, int]] = {}
         start = 0
         for iid, pts in instance_seed_points.items():
             if pts.shape[0] == 0:
                 continue
             global_points.append(pts)
+            seed_t = 0
+            if instance_seed_frames is not None:
+                seed_t = int(instance_seed_frames.get(iid, 0))
+            seed_t = max(0, min(seed_t, len(frames_bgr) - 1))
+            global_t0.append(np.full((pts.shape[0], 1), float(seed_t), dtype=np.float32))
             end = start + pts.shape[0]
             slices[iid] = (start, end)
             start = end
@@ -114,7 +124,7 @@ class CoTrackerPersistentTracker:
         video_t = torch.from_numpy(video_np).permute(0, 3, 1, 2).unsqueeze(0).float() / 255.0  # [1,T,3,H,W]
 
         pts0 = np.concatenate(global_points, axis=0)  # [N,2]
-        t0 = np.zeros((pts0.shape[0], 1), dtype=np.float32)
+        t0 = np.concatenate(global_t0, axis=0) if global_t0 else np.zeros((pts0.shape[0], 1), dtype=np.float32)
         queries = np.concatenate([t0, pts0], axis=1)  # [N,3] => [t,x,y]
         queries_t = torch.from_numpy(queries).unsqueeze(0).float()  # [1,N,3]
 

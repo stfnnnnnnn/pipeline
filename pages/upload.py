@@ -51,6 +51,23 @@ if uploaded_file is not None:
             target_height = st.selectbox("Processing resolution", [720, 480], index=0)
             keyframe_stride = st.slider("Keyframe stride", min_value=4, max_value=24, value=12, step=1)
 
+            st.markdown("### Mask Generation")
+            use_keyframe_stride_for_masks = st.checkbox(
+                "Use keyframe stride for mask generation",
+                value=True,
+                help="If enabled, masks are generated every N frames where N is keyframe stride.",
+            )
+            mask_frame_stride = keyframe_stride
+            if not use_keyframe_stride_for_masks:
+                mask_frame_stride = st.slider(
+                    "Mask frame stride",
+                    min_value=1,
+                    max_value=24,
+                    value=1,
+                    step=1,
+                    help="1 = every frame, higher values skip frames.",
+                )
+
             st.markdown("### Tracking Limits")
             keep_chunk_default = st.checkbox(
                 "Keep default max frames per chunk",
@@ -88,6 +105,7 @@ if uploaded_file is not None:
                 st.session_state["current_video_path"] = tfile.name
                 st.session_state["target_height"] = int(target_height)
                 st.session_state["keyframe_stride"] = int(keyframe_stride)
+                st.session_state["mask_frame_stride"] = int(mask_frame_stride)
                 st.session_state["max_total_frames"] = int(max_frames) if max_frames is not None else None
                 st.session_state["max_frames_per_chunk"] = (
                     int(max_frames_per_chunk) if max_frames_per_chunk is not None else None
