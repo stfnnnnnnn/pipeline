@@ -2,7 +2,7 @@
 
 This repository contains a Streamlit app and a multi-stage perception pipeline:
 
-1. Phase A (Keyframes): YOLO11s + SAM2 masks
+1. Phase A (Keyframes): YOLO26s + SAM2 masks
 2. Phase B: CoTracker point tracking
 3. Phase C: SAM2 masks on all frames
 4. Optional: GroundingDINO for scene labels (buildings/trees/road/sky)
@@ -18,13 +18,27 @@ Two conda environments are required:
 powershell -ExecutionPolicy Bypass -File .\setup_windows.ps1
 ```
 
+The setup script first checks machine GPU capability, then selects a preferred wheel:
+- If no NVIDIA GPU is detected, it installs CPU torch wheels automatically.
+- Driver CUDA `>= 12.8` -> prefer `cu128`
+- Otherwise -> prefer `cu121`
+
+It validates a real CUDA tensor operation, falls back to the other CUDA wheel if needed,
+and finally falls back to CPU wheels when GPU wheels cannot run on the current device.
+
 ### A. Main app env (vidcolor)
 ```powershell
 conda env create -f environment.yml
 conda activate vidcolor
 
+# Check driver CUDA version first
+nvidia-smi | findstr "CUDA Version"
+
 # Install CUDA-enabled torch
-python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+python -m pip install -U torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+
+# Fallback if your machine/env needs older CUDA wheels
+python -m pip install -U torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 
 # Install remaining deps
 python -m pip install -r requirements.txt
@@ -40,12 +54,26 @@ python -c "import torch; print(torch.__version__, torch.version.cuda, torch.cuda
 conda env create -f environment-gdino310.yml
 conda activate gdino310
 
+# Check driver CUDA version first
+nvidia-smi | findstr "CUDA Version"
+
 # Install CUDA-enabled torch
-python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+python -m pip install -U torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+
+# Fallback if your machine/env needs older CUDA wheels
+python -m pip install -U torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 
 # Install GroundingDINO from source
 python -m pip install -U git+https://github.com/IDEA-Research/GroundingDINO.git
 ```
+
+Validate GroundingDINO custom ops:
+```powershell
+python -c "import groundingdino._C as C; print('gdino custom ops ok', hasattr(C, 'ms_deform_attn_forward'))"
+```
+
+If custom ops are unavailable on your stack, `scripts/gdino_worker.py` automatically falls back to
+PyTorch deformable attention (GPU-capable but slower than custom ops).
 
 Pin transformers to avoid BERT API breakages:
 ```powershell
@@ -63,9 +91,9 @@ python -c "import groundingdino._C as C; print('groundingdino _C ok')"
 
 Place checkpoints in the following paths:
 
-- YOLO11s: models/checkpoints/yolo/yolo11s.pt
+- YOLO26s: models/checkpoints/yolo/yolo26s.pt
 - SAM2 Hiera-L: models/checkpoints/sam2/sam2_hiera_large.pt
-- CoTracker: models/checkpoints/cotracker/cotracker2.pth
+- CoTracker: models/checkpoints/cotracker/cotracker3.pth
 - GroundingDINO SwinB: models/checkpoints/grounding_dino/groundingdino_swinb_cogcoor.pth
 
 GroundingDINO config file:
@@ -78,11 +106,14 @@ Open configs/perception/grounding_dino.yaml and set:
 - `conda_exe` to your conda.bat
 - `torch_lib_dir` to the gdino310 torch lib directory
 - `cuda_bin_dir` to your CUDA bin path
+- `allow_cpu_fallback` to `false` to enforce GPU-only execution
 
-Default values are already set for a typical Windows layout:
+Or leave them as `null` to use auto-detection (recommended for multi-device portability).
+
+Example values for a typical Windows layout:
 ```
-C:\Users\LENOVO\miniconda3\condabin\conda.bat
-C:\Users\LENOVO\miniconda3\envs\gdino310\Lib\site-packages\torch\lib
+C:\ProgramData\miniconda3\condabin\conda.bat
+C:\ProgramData\miniconda3\envs\gdino310\Lib\site-packages\torch\lib
 C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.4\bin
 ```
 
@@ -96,9 +127,9 @@ streamlit run app.py
 ## 5) Key configs to tune
 
 - YOLO labels and masking:
-	- configs/perception/yolo11_s.yaml
+	- configs/perception/yolo26_s.yaml
 - CoTracker settings:
-	- configs/perception/cotracker2.yaml
+	- configs/perception/cotracker3.yaml
 - GroundingDINO prompts and thresholds:
 	- configs/perception/grounding_dino.yaml
 

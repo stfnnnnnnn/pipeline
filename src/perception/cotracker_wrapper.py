@@ -4,6 +4,8 @@ Tracks sampled points across all video frames and returns per-instance tracks.
 """
 from __future__ import annotations
 
+import inspect
+import re
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -40,30 +42,112 @@ class CoTrackerPersistentTracker:
     ) -> None:
         if CoTrackerPredictor is None:
             raise ImportError(f"CoTracker import failed. Install cotracker. Error: {COTRACKER_IMPORT_ERROR}")
+
+        name = Path(checkpoint_path).name.lower()
         if v2 is None:
-            name = Path(checkpoint_path).name.lower()
-            v2 = "cotracker2" in name or "v2" in name
-        if window_len is None:
-            window_len = 8 if v2 else 60
+            if "cotracker2" in name or "v2" in name:
+                v2 = True
+            elif "cotracker3" in name or "v3" in name:
+                v2 = False
+
         if use_half is None:
             use_half = device.startswith("cuda")
+
+        self.model = self._build_predictor(
+            checkpoint_path=checkpoint_path,
+            offline=offline,
+            v2=v2,
+            window_len=window_len,
+        )
+
         try:
-            self.model = CoTrackerPredictor(
-                checkpoint=checkpoint_path,
-                offline=offline,
-                v2=bool(v2),
-                window_len=int(window_len),
-            ).to(device)
-        except TypeError:
-            self.model = CoTrackerPredictor(checkpoint_path)
-            try:
-                self.model = self.model.to(device)
-            except Exception:
-                pass
+            self.model = self.model.to(device)
+        except Exception:
+            pass
+
         self.device = device
         self.use_half = bool(use_half)
         self.fallback_cpu_on_oom = fallback_cpu_on_oom
         self.max_frames_per_chunk = max_frames_per_chunk
+
+    @staticmethod
+    def _build_predictor(
+        checkpoint_path: str,
+        offline: bool,
+        v2: Optional[bool],
+        window_len: Optional[int],
+    ):
+        sig = inspect.signature(CoTrackerPredictor)
+        supports_window_len = "window_len" in sig.parameters
+
+        def _infer_expected_window_len(err_msg: str) -> Optional[int]:
+            if "time_emb" not in err_msg:
+                return None
+            matches = re.findall(r"torch\.Size\(\[1,\s*(\d+),\s*\d+\]\)", err_msg)
+            if len(matches) >= 2:
+                try:
+                    # First match corresponds to checkpoint tensor shape in this error format.
+                    return int(matches[0])
+                except Exception:
+                    return None
+            return None
+
+        def _construct(window_len_override: Optional[int]):
+            kwargs = {}
+
+            if "checkpoint" in sig.parameters:
+                kwargs["checkpoint"] = checkpoint_path
+            if "offline" in sig.parameters:
+                kwargs["offline"] = bool(offline)
+            if "v2" in sig.parameters and v2 is not None:
+                kwargs["v2"] = bool(v2)
+            if supports_window_len and window_len_override is not None:
+                kwargs["window_len"] = int(window_len_override)
+
+            try:
+                if kwargs:
+                    return CoTrackerPredictor(**kwargs)
+                return CoTrackerPredictor(checkpoint_path)
+            except TypeError:
+                try:
+                    return CoTrackerPredictor(checkpoint=checkpoint_path)
+                except TypeError:
+                    return CoTrackerPredictor(checkpoint_path)
+
+        candidate_windows: List[Optional[int]] = []
+        if supports_window_len:
+            if window_len is not None:
+                candidate_windows.append(int(window_len))
+            # Try library default first when no explicit override is required.
+            candidate_windows.append(None)
+            for common in (60, 16, 8):
+                if common not in candidate_windows:
+                    candidate_windows.append(common)
+        else:
+            candidate_windows = [None]
+
+        attempted: List[Optional[int]] = []
+        idx = 0
+        last_error: Optional[Exception] = None
+        while idx < len(candidate_windows):
+            win = candidate_windows[idx]
+            attempted.append(win)
+            try:
+                return _construct(win)
+            except RuntimeError as exc:
+                last_error = exc
+                if supports_window_len:
+                    inferred = _infer_expected_window_len(str(exc))
+                    if inferred is not None and inferred not in candidate_windows:
+                        candidate_windows.insert(idx + 1, inferred)
+            idx += 1
+
+        attempted_str = ", ".join(["default" if x is None else str(x) for x in attempted])
+        raise RuntimeError(
+            "Failed to initialize CoTracker predictor for checkpoint "
+            f"'{checkpoint_path}'. Tried window_len values: {attempted_str}. "
+            f"Last error: {last_error}"
+        )
 
     @staticmethod
     def sample_points_from_mask(mask: np.ndarray, k: int = 24) -> np.ndarray:

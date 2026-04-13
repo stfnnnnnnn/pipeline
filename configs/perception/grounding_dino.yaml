@@ -2,23 +2,28 @@
 # Runs via scripts/gdino_worker.py in a separate conda env.
 enabled: true
 env_name: "gdino310"
-conda_exe: "C:\\Users\\LENOVO\\miniconda3\\condabin\\conda.bat"
+# Optional: set to null to auto-detect conda across machines.
+conda_exe: null
 script_path: "scripts/gdino_worker.py"
 model_config: "configs/perception/grounding_dino/GroundingDINO_SwinB.cfg.py"
 model_weights: "models/checkpoints/grounding_dino/groundingdino_swinb_cogcoor.pth"
 device: "cuda"
-box_threshold: 0.35
-text_threshold: 0.25
-max_detections: 50
+# Keep GPU-first behavior; set true only if CPU fallback is acceptable.
+allow_cpu_fallback: false
+box_threshold: 0.32
+text_threshold: 0.23
+max_detections: 30
 box_pad_ratio: 0.15
 mask_selection: "area"
 area_weight: 0.4
 prompts:
   - "building"
+  - "buildings"
   - "house"
   - "tree"
   - "forest"
   - "road"
+  - "roads"
   - "street"
   - "sidewalk"
   - "sky"
@@ -26,7 +31,7 @@ prompts:
   - "grass"
   - "mountain"
   - "water"
-# DLL dirs required on Windows before importing groundingdino._C
-# Update these if your paths differ.
-torch_lib_dir: "C:\\Users\\LENOVO\\miniconda3\\envs\\gdino310\\Lib\\site-packages\\torch\\lib"
-cuda_bin_dir: "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.4\\bin"
+# Optional DLL dirs on Windows before importing groundingdino._C.
+# Keep null to auto-detect from env/CUDA installation.
+torch_lib_dir: null
+cuda_bin_dir: null

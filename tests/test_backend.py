@@ -17,8 +17,8 @@ try:
     results = process_video_for_segmentation(
         video_path=VIDEO_INPUT,
         progress_callback=print_progress,
-        yolo_model=f"{CHECKPOINT_DIR}/yolo/yolo11s.pt",
-        cotracker_checkpoint=f"{CHECKPOINT_DIR}/cotracker/cotracker2.pth",
+        yolo_model=f"{CHECKPOINT_DIR}/yolo/yolo26s.pt",
+        cotracker_checkpoint=f"{CHECKPOINT_DIR}/cotracker/cotracker3.pth",
         sam2_model_cfg="configs/perception/sam2_hiera_l.yaml",
         sam2_checkpoint=f"{CHECKPOINT_DIR}/sam2/sam2_hiera_large.pt",
         device="cuda"

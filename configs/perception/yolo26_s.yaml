@@ -1,0 +1,48 @@
+# YOLO26s Configuration for MoodPlay (COCO-safe labels)
+model_path: "models/checkpoints/yolo/yolo26s.pt"
+device: "cuda"
+conf_threshold: 0.24
+iou_threshold: 0.6
+target_labels:
+  - "person"
+  - "tie"
+  - "handbag"
+  - "backpack"
+  - "umbrella"
+  - "suitcase"
+  - "car"
+  - "truck"
+  - "bus"
+  - "motorcycle"
+  - "bicycle"
+  - "train"
+  - "boat"
+  - "traffic light"
+  - "stop sign"
+  - "bench"
+  - "chair"
+  - "couch"
+  - "potted plant"
+label_aliases: {}
+mask_refine:
+  box_pad_ratio: 0.10
+  min_area: 32
+  morph_kernel: 1
+detection_filter:
+  yolo_min_conf: 0.26
+  yolo_max_box_area_ratio: 0.65
+  yolo_bus_max_box_area_ratio: 0.45
+  gdino_person_overlap_block_iou: 0.25
+  gdino_scene_min_box_area_ratio: 0.015
+  gdino_keyframe_interval: 2
+  static_mask_min_area: 256
+  static_mask_kernel: 2
+  static_scene_max_area_ratio: 0.86
+  sky_bottom_max_ratio: 0.08
+  road_top_max_ratio: 0.18
+  dynamic_box_clip_pad_ratio: 0.05
+  dynamic_component_min_area: 96
+scene_fallback:
+  enabled: true
+  track: false
+  label: "scene"

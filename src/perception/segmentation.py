@@ -10,10 +10,11 @@ from __future__ import annotations
 
 import gc
 import json
+import re
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -115,6 +116,302 @@ def _bbox_iou(a: np.ndarray, b: np.ndarray) -> float:
     area_b = max(0.0, bx2 - bx1) * max(0.0, by2 - by1)
     union = area_a + area_b - inter
     return float(inter / union) if union > 0 else 0.0
+
+
+def _bbox_center(box: np.ndarray) -> Tuple[float, float]:
+    x1, y1, x2, y2 = box
+    return float((x1 + x2) * 0.5), float((y1 + y2) * 0.5)
+
+
+def _center_distance(a: Tuple[float, float], b: Tuple[float, float]) -> float:
+    return float(np.hypot(a[0] - b[0], a[1] - b[1]))
+
+
+def _bbox_area(box: np.ndarray) -> float:
+    x1, y1, x2, y2 = box
+    return float(max(0.0, x2 - x1) * max(0.0, y2 - y1))
+
+
+def _adaptive_tracking_points(mask: np.ndarray, base_k: int) -> int:
+    h, w = mask.shape[:2]
+    if h <= 0 or w <= 0:
+        return int(base_k)
+    area = int((mask > 0).sum())
+    if area <= 0:
+        return int(base_k)
+    ratio = float(area) / float(max(1, h * w))
+    scale = 1.0 + min(2.5, ratio * 4.0)
+    return int(min(192, max(base_k, round(base_k * scale))))
+
+
+def _dedupe_dets_and_masks(
+    dets: List[SimpleDetection],
+    masks: np.ndarray,
+    iou_threshold: float = 0.75,
+) -> Tuple[List[SimpleDetection], np.ndarray]:
+    if not dets:
+        return dets, masks
+    if masks.shape[0] != len(dets):
+        return dets, masks
+
+    order = sorted(range(len(dets)), key=lambda i: _bbox_area(dets[i].bbox_xyxy), reverse=True)
+    keep: List[int] = []
+    for idx in order:
+        cur = dets[idx]
+        duplicate = False
+        for kept_idx in keep:
+            kept = dets[kept_idx]
+            if cur.label.lower() != kept.label.lower():
+                continue
+            if _bbox_iou(cur.bbox_xyxy, kept.bbox_xyxy) >= iou_threshold:
+                duplicate = True
+                break
+        if not duplicate:
+            keep.append(idx)
+
+    keep = sorted(keep)
+    out_dets = [dets[i] for i in keep]
+    out_masks = masks[keep] if keep else np.zeros((0, *masks.shape[1:]), dtype=masks.dtype)
+    return out_dets, out_masks
+
+
+_STATIC_SCENE_LABELS = {
+    "road",
+    "street",
+    "sidewalk",
+    "roads",
+    "building",
+    "buildings",
+    "house",
+    "wall",
+    "sky",
+    "tree",
+    "forest",
+}
+
+_SCENE_LABEL_CANONICAL = {
+    "building": "building",
+    "buildings": "building",
+    "house": "building",
+    "wall": "building",
+    "road": "road",
+    "roads": "road",
+    "street": "road",
+    "sidewalk": "road",
+    "sky": "sky",
+    "tree": "tree",
+    "forest": "tree",
+}
+
+_PERSON_VEHICLE_LABELS = {
+    "person",
+    "car",
+    "truck",
+    "bus",
+    "motorcycle",
+    "bicycle",
+    "train",
+    "boat",
+}
+
+_DYNAMIC_BOX_CONSTRAIN_LABELS = _PERSON_VEHICLE_LABELS | {
+    "tie",
+    "handbag",
+    "backpack",
+    "umbrella",
+    "suitcase",
+}
+
+
+def _is_static_scene_label(label: str) -> bool:
+    return str(label).strip().lower() in _STATIC_SCENE_LABELS
+
+
+def _canonicalize_scene_label(raw: str) -> str:
+    text = str(raw or "").strip().lower()
+    if not text:
+        return ""
+    if text in _SCENE_LABEL_CANONICAL:
+        return _SCENE_LABEL_CANONICAL[text]
+
+    for token in re.split(r"[^a-z0-9]+", text):
+        if token in _SCENE_LABEL_CANONICAL:
+            return _SCENE_LABEL_CANONICAL[token]
+
+    for key, canonical in _SCENE_LABEL_CANONICAL.items():
+        if key in text:
+            return canonical
+    return text
+
+
+def _pad_ratio_for_label(label: str, default_pad: float) -> float:
+    if _is_static_scene_label(label):
+        return max(float(default_pad), 0.16)
+    return float(default_pad)
+
+
+def _nearest_known_box(
+    bboxes: Dict[int, List[float]],
+    frame_idx: int,
+    max_gap: int = 12,
+) -> Optional[List[float]]:
+    if not bboxes:
+        return None
+
+    nearest = min(bboxes.keys(), key=lambda k: abs(int(k) - int(frame_idx)))
+    if abs(int(nearest) - int(frame_idx)) > int(max_gap):
+        return None
+    return bboxes.get(int(nearest))
+
+
+def _keep_top_components(mask_u8: np.ndarray, top_k: int = 2, min_area: int = 256) -> np.ndarray:
+    if mask_u8 is None or mask_u8.size == 0:
+        return mask_u8
+    m = (mask_u8 > 0).astype(np.uint8)
+    if int(m.sum()) == 0:
+        return m
+
+    num, comp, stats, _ = cv2.connectedComponentsWithStats(m, connectivity=8)
+    if num <= 1:
+        return m
+
+    candidates: List[Tuple[int, int]] = []
+    for cid in range(1, num):
+        area = int(stats[cid, cv2.CC_STAT_AREA])
+        if area >= int(min_area):
+            candidates.append((area, cid))
+
+    if not candidates:
+        return np.zeros_like(m, dtype=np.uint8)
+
+    candidates.sort(reverse=True)
+    keep_ids = {cid for _, cid in candidates[: max(1, int(top_k))]}
+    out = np.zeros_like(m, dtype=np.uint8)
+    for cid in keep_ids:
+        out[comp == cid] = 1
+    return out
+
+
+def _shape_scene_mask(mask_u8: np.ndarray, label: str) -> np.ndarray:
+    if mask_u8 is None or mask_u8.size == 0:
+        return mask_u8
+    m = (mask_u8 > 0).astype(np.uint8)
+    h, _w = m.shape[:2]
+    lbl = _canonicalize_scene_label(label)
+
+    if lbl == "sky":
+        cutoff = int(h * 0.75)
+        m[cutoff:, :] = 0
+    elif lbl == "road":
+        cutoff = int(h * 0.45)
+        m[:cutoff, :] = 0
+        # Connect fragmented road segments before component filtering.
+        k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+        m = cv2.morphologyEx(m, cv2.MORPH_CLOSE, k)
+
+    if lbl == "road":
+        m = _keep_top_components(m, top_k=6, min_area=96)
+    elif lbl == "building":
+        m = _keep_top_components(m, top_k=3, min_area=256)
+    elif lbl == "sky":
+        m = _keep_top_components(m, top_k=2, min_area=256)
+    elif lbl == "tree":
+        m = _keep_top_components(m, top_k=4, min_area=96)
+    return m
+
+
+def _mask_area_ratio(mask_u8: np.ndarray) -> float:
+    if mask_u8 is None or mask_u8.size == 0:
+        return 0.0
+    h, w = mask_u8.shape[:2]
+    return float((mask_u8 > 0).sum()) / float(max(1, h * w))
+
+
+def _mask_region_ratio(mask_u8: np.ndarray, y1_ratio: float, y2_ratio: float) -> float:
+    if mask_u8 is None or mask_u8.size == 0:
+        return 0.0
+    m = (mask_u8 > 0).astype(np.uint8)
+    h, _w = m.shape[:2]
+    y1 = int(np.clip(round(h * y1_ratio), 0, h))
+    y2 = int(np.clip(round(h * y2_ratio), 0, h))
+    if y2 <= y1:
+        return 0.0
+    band = m[y1:y2, :]
+    total = int(m.sum())
+    if total <= 0:
+        return 0.0
+    return float(int(band.sum())) / float(total)
+
+
+def _relabel_scene_by_geometry(mask_u8: np.ndarray, label: str) -> str:
+    lbl = _canonicalize_scene_label(label)
+    if lbl not in {"sky", "building", "road", "tree"}:
+        return lbl
+
+    if mask_u8 is None or mask_u8.size == 0:
+        return lbl
+
+    top_ratio = _mask_region_ratio(mask_u8, 0.0, 0.35)
+    bottom_ratio = _mask_region_ratio(mask_u8, 0.7, 1.0)
+
+    # Sky should stay mostly in upper image bands; otherwise treat as building.
+    if lbl == "sky" and bottom_ratio > 0.18:
+        return "building"
+    # Building masks concentrated near the top are often sky confusion.
+    if lbl == "building" and top_ratio > 0.82 and bottom_ratio < 0.03:
+        return "sky"
+    return lbl
+
+
+def _constrain_mask_to_box(mask_u8: np.ndarray, box: np.ndarray, pad_ratio: float = 0.06) -> np.ndarray:
+    if mask_u8 is None or mask_u8.size == 0:
+        return mask_u8
+    h, w = mask_u8.shape[:2]
+    b = _pad_box(box.astype(np.float32), w, h, pad_ratio)
+    x1, y1, x2, y2 = [int(round(v)) for v in b.tolist()]
+    x1 = max(0, min(x1, w - 1))
+    y1 = max(0, min(y1, h - 1))
+    x2 = max(0, min(x2, w - 1))
+    y2 = max(0, min(y2, h - 1))
+    if x2 <= x1 or y2 <= y1:
+        return np.zeros_like(mask_u8, dtype=np.uint8)
+
+    out = np.zeros_like(mask_u8, dtype=np.uint8)
+    out[y1:y2, x1:x2] = (mask_u8[y1:y2, x1:x2] > 0).astype(np.uint8)
+    return out
+
+
+def _keep_component_near_center(mask_u8: np.ndarray, box: np.ndarray, min_area: int = 64) -> np.ndarray:
+    if mask_u8 is None or mask_u8.size == 0:
+        return mask_u8
+    m = (mask_u8 > 0).astype(np.uint8)
+    if int(m.sum()) == 0:
+        return m
+
+    num, comp, stats, centroids = cv2.connectedComponentsWithStats(m, connectivity=8)
+    if num <= 2:
+        return m
+
+    cx, cy = _bbox_center(box)
+    best_cid = None
+    best_score = float("inf")
+    for cid in range(1, num):
+        area = int(stats[cid, cv2.CC_STAT_AREA])
+        if area < int(min_area):
+            continue
+        ccx, ccy = centroids[cid]
+        dist = float(np.hypot(ccx - cx, ccy - cy))
+        score = dist - (0.001 * float(area))
+        if score < best_score:
+            best_score = score
+            best_cid = cid
+
+    if best_cid is None:
+        return m
+
+    out = np.zeros_like(m, dtype=np.uint8)
+    out[comp == best_cid] = 1
+    return out
 
 
 def _mask_centroid(mask: np.ndarray) -> Optional[List[float]]:
@@ -223,7 +520,7 @@ def process_video_for_segmentation(
     *,
     data_root: str = "data",
     target_height: int = 720,
-    yolo_model: str = "models/checkpoints/yolo/yolo11s.pt",
+    yolo_model: str = "models/checkpoints/yolo/yolo26s.pt",
     yolo_conf: float = 0.25,
     yolo_iou: float = 0.6,
     keyframe_stride: int = 12,
@@ -232,13 +529,13 @@ def process_video_for_segmentation(
     max_total_frames: Optional[int] = None,
     clean_output_dirs: bool = True,
     save_npy_masks: bool = False,
-    cotracker_checkpoint: str = "models/checkpoints/cotracker/cotracker2.pth",
+    cotracker_checkpoint: str = "models/checkpoints/cotracker/cotracker3.pth",
     sam2_model_cfg: str = "configs/perception/sam2_hiera_l.yaml",
     sam2_checkpoint: str = "models/checkpoints/sam2/sam2_hiera_large.pt",
     target_labels: Optional[List[str]] = None,
     device: str = "cuda",
-    yolo_config_path: str = "configs/perception/yolo11_s.yaml",
-    cotracker_config_path: str = "configs/perception/cotracker2.yaml",
+    yolo_config_path: str = "configs/perception/yolo26_s.yaml",
+    cotracker_config_path: str = "configs/perception/cotracker3.yaml",
     grounding_dino_config_path: str = "configs/perception/grounding_dino.yaml",
 ) -> Dict[str, Any]:
     cb = progress_callback or _noop_progress
@@ -266,6 +563,25 @@ def process_video_for_segmentation(
     mask_min_area = int(mask_cfg.get("min_area", 32))
     mask_kernel = int(mask_cfg.get("morph_kernel", 3))
 
+    det_filter_cfg = yolo_cfg.get("detection_filter", {})
+    if not isinstance(det_filter_cfg, dict):
+        det_filter_cfg = {}
+    yolo_min_conf = float(det_filter_cfg.get("yolo_min_conf", yolo_conf))
+    yolo_max_box_area_ratio = float(det_filter_cfg.get("yolo_max_box_area_ratio", 0.72))
+    yolo_bus_max_box_area_ratio = float(det_filter_cfg.get("yolo_bus_max_box_area_ratio", 0.58))
+    gdino_person_overlap_block_iou = float(det_filter_cfg.get("gdino_person_overlap_block_iou", 0.25))
+    gdino_scene_min_box_area_ratio = float(det_filter_cfg.get("gdino_scene_min_box_area_ratio", 0.01))
+    gdino_keyframe_interval = int(det_filter_cfg.get("gdino_keyframe_interval", 1))
+    if gdino_keyframe_interval <= 0:
+        gdino_keyframe_interval = 1
+    static_mask_min_area = int(det_filter_cfg.get("static_mask_min_area", max(128, mask_min_area * 6)))
+    static_mask_kernel = int(det_filter_cfg.get("static_mask_kernel", max(2, mask_kernel)))
+    static_scene_max_area_ratio = float(det_filter_cfg.get("static_scene_max_area_ratio", 0.88))
+    sky_bottom_max_ratio = float(det_filter_cfg.get("sky_bottom_max_ratio", 0.10))
+    road_top_max_ratio = float(det_filter_cfg.get("road_top_max_ratio", 0.12))
+    dynamic_box_clip_pad_ratio = float(det_filter_cfg.get("dynamic_box_clip_pad_ratio", 0.06))
+    dynamic_component_min_area = int(det_filter_cfg.get("dynamic_component_min_area", max(64, mask_min_area * 2)))
+
     scene_cfg = yolo_cfg.get("scene_fallback", {})
     scene_enabled = False
     scene_track = False
@@ -288,6 +604,23 @@ def process_video_for_segmentation(
     cotracker_checkpoint = str(cot_cfg.get("checkpoint", cotracker_checkpoint))
     tracker_points_per_instance = int(cot_cfg.get("points_per_instance", tracker_points_per_instance))
     keyframe_stride = int(cot_cfg.get("keyframe_stride", keyframe_stride))
+    cotracker_offline = bool(cot_cfg.get("offline", True))
+
+    cotracker_v2_cfg = cot_cfg.get("v2", None)
+    cotracker_v2: Optional[bool]
+    if isinstance(cotracker_v2_cfg, bool):
+        cotracker_v2 = cotracker_v2_cfg
+    else:
+        cotracker_v2 = None
+
+    cotracker_window_len_cfg = cot_cfg.get("window_len", None)
+    cotracker_window_len: Optional[int]
+    if isinstance(cotracker_window_len_cfg, (int, float)):
+        cotracker_window_len = int(cotracker_window_len_cfg)
+        if cotracker_window_len <= 0:
+            cotracker_window_len = None
+    else:
+        cotracker_window_len = None
 
     max_frames_per_chunk_cfg = cot_cfg.get("max_frames_per_chunk", None)
     if isinstance(max_frames_per_chunk_cfg, (int, float)):
@@ -325,6 +658,17 @@ def process_video_for_segmentation(
     else:
         max_total_frames = None
     device = str(cot_cfg.get("device", device))
+
+    if str(device).startswith("cuda") and not torch.cuda.is_available():
+        device = "cpu"
+    runtime_device = str(device)
+
+    id_match_cfg = cot_cfg.get("id_match", {})
+    if not isinstance(id_match_cfg, dict):
+        id_match_cfg = {}
+    id_match_iou = float(id_match_cfg.get("min_iou", 0.3))
+    id_match_center_dist_ratio = float(id_match_cfg.get("max_center_dist_ratio", 0.35))
+    dedupe_iou = float(id_match_cfg.get("dedupe_iou", 0.75))
 
     if max_frames_per_chunk is None and not torch.cuda.is_available():
         max_frames_per_chunk = 8
@@ -402,11 +746,49 @@ def process_video_for_segmentation(
         for i, fidx in enumerate(keyframes):
             frame = frames_bgr[fidx]
             yolo_dets = detector.detect(frame, conf=yolo_conf, iou=yolo_iou, target_labels=label_set)
+            h, w = frame.shape[:2]
+
+            # Remove implausible YOLO detections (for example full-scene false-positive bus).
+            yolo_filtered = []
+            for det in yolo_dets:
+                area_ratio = _bbox_area(det.bbox_xyxy) / float(max(1.0, h * w))
+                if float(det.conf) < yolo_min_conf:
+                    continue
+                lbl = str(det.label).strip().lower()
+                if lbl == "bus" and area_ratio > yolo_bus_max_box_area_ratio:
+                    continue
+                if lbl in _PERSON_VEHICLE_LABELS and area_ratio > yolo_max_box_area_ratio:
+                    continue
+                yolo_filtered.append(det)
+            yolo_dets = yolo_filtered
+
+            person_like_boxes = [
+                det.bbox_xyxy
+                for det in yolo_dets
+                if str(det.label).strip().lower() in {"person", "tie", "backpack", "handbag", "umbrella", "suitcase"}
+            ]
+
             gdino_dets: List[SimpleDetection] = []
-            if gdino_detector is not None:
+            run_gdino_this_keyframe = (i % gdino_keyframe_interval == 0) or (i == len(keyframes) - 1)
+            if gdino_detector is not None and run_gdino_this_keyframe:
                 gdino_raw = gdino_detector.detect(frame_paths[fidx])
                 for gd in gdino_raw:
-                    gdino_dets.append(SimpleDetection(bbox_xyxy=gd["bbox_xyxy"], label=gd["label"]))
+                    bbox = gd["bbox_xyxy"]
+                    raw_label = str(gd.get("label", "")).strip()
+                    label = _canonicalize_scene_label(raw_label)
+                    if not label or label not in {"sky", "road", "building", "tree"}:
+                        continue
+
+                    area_ratio = _bbox_area(bbox) / float(max(1.0, h * w))
+                    if area_ratio < gdino_scene_min_box_area_ratio:
+                        continue
+
+                    # Suppress common confusion where people are labeled as trees.
+                    if label == "tree" and person_like_boxes:
+                        if any(_bbox_iou(bbox, pb) >= gdino_person_overlap_block_iou for pb in person_like_boxes):
+                            continue
+
+                    gdino_dets.append(SimpleDetection(bbox_xyxy=bbox, label=label))
 
             if not yolo_dets and not gdino_dets:
                 if scene_enabled:
@@ -549,19 +931,67 @@ def process_video_for_segmentation(
             else:
                 masks = np.zeros((0, h, w), dtype=bool)
 
+            dets, masks = _dedupe_dets_and_masks([SimpleDetection(d.bbox_xyxy, d.label) for d in dets], masks, iou_threshold=dedupe_iou)
+
             assigned = []
             curr_id_to_bbox: Dict[int, np.ndarray] = {}
+            frame_diag = float(max(1.0, np.hypot(w, h)))
 
             for det, mask in zip(dets, masks):
-                best_id, best_score = None, 0.0
+                det_label = _canonicalize_scene_label(det.label)
+                det.label = det_label or det.label
+
+                if _is_static_scene_label(det.label):
+                    m = _postprocess_mask(
+                        mask.astype(np.uint8),
+                        min_area=max(mask_min_area, static_mask_min_area),
+                        kernel=max(mask_kernel, static_mask_kernel),
+                    )
+                    det.label = _relabel_scene_by_geometry(m, det.label)
+                    m = _shape_scene_mask(m, det.label)
+                    area_ratio = _mask_area_ratio(m)
+                    if area_ratio <= 0.0 or area_ratio > static_scene_max_area_ratio:
+                        continue
+                    if det.label == "sky" and _mask_region_ratio(m, 0.7, 1.0) > sky_bottom_max_ratio:
+                        continue
+                    if det.label == "road" and _mask_region_ratio(m, 0.0, 0.45) > road_top_max_ratio:
+                        continue
+                    mask = m.astype(bool)
+                    if not np.any(mask):
+                        continue
+                else:
+                    lbl = str(det.label).strip().lower()
+                    if lbl in _DYNAMIC_BOX_CONSTRAIN_LABELS:
+                        m = _constrain_mask_to_box(mask.astype(np.uint8), det.bbox_xyxy, pad_ratio=dynamic_box_clip_pad_ratio)
+                        if lbl == "person":
+                            m = _keep_component_near_center(m, det.bbox_xyxy, min_area=dynamic_component_min_area)
+                        m = _postprocess_mask(m, min_area=mask_min_area, kernel=mask_kernel)
+                        if not np.any(m):
+                            continue
+                        mask = m.astype(bool)
+
+                best_id = None
+                best_iou = 0.0
+                best_dist_ratio = 1.0
+                det_center = _bbox_center(det.bbox_xyxy)
                 for iid, pb in prev_key_bboxes.items():
+                    if iid in assigned:
+                        continue
                     if iid in instances and instances[iid].label != det.label:
                         continue
-                    s = _bbox_iou(det.bbox_xyxy, pb)
-                    if s > best_score:
-                        best_score, best_id = s, iid
+                    iou = _bbox_iou(det.bbox_xyxy, pb)
+                    if iou <= 0.0:
+                        continue
+                    prev_center = _bbox_center(pb)
+                    dist_ratio = _center_distance(det_center, prev_center) / frame_diag
+                    if dist_ratio > id_match_center_dist_ratio:
+                        continue
+                    if iou > best_iou or (abs(iou - best_iou) < 1e-6 and dist_ratio < best_dist_ratio):
+                        best_iou = iou
+                        best_dist_ratio = dist_ratio
+                        best_id = iid
 
-                if best_id is not None and best_score >= 0.2 and best_id not in assigned:
+                if best_id is not None and best_iou >= id_match_iou:
                     iid = best_id
                 else:
                     iid = next_instance_id
@@ -590,8 +1020,9 @@ def process_video_for_segmentation(
                 )
 
                 if iid not in instance_seed_points:
+                    k_points = _adaptive_tracking_points(mask.astype(np.uint8), tracker_points_per_instance)
                     pts = CoTrackerPersistentTracker.sample_points_from_mask(
-                        mask.astype(np.uint8), k=tracker_points_per_instance
+                        mask.astype(np.uint8), k=k_points
                     )
                     if pts.shape[0] == 0:
                         x1, y1, x2, y2 = det.bbox_xyxy
@@ -633,6 +1064,7 @@ def process_video_for_segmentation(
                 "instances": [],
                 "mask_root": str(masks_root),
                 "metadata_path": str(meta_path),
+                "runtime_device": runtime_device,
             }
 
         # ---------- Phase B ----------
@@ -640,6 +1072,9 @@ def process_video_for_segmentation(
         tracker = CoTrackerPersistentTracker(
             checkpoint_path=cotracker_checkpoint,
             device=device,
+            v2=cotracker_v2,
+            offline=cotracker_offline,
+            window_len=cotracker_window_len,
             max_frames_per_chunk=max_frames_per_chunk,
         )
         tracked_points = tracker.track_points(frames_bgr, instance_seed_points)
@@ -671,12 +1106,18 @@ def process_video_for_segmentation(
             frame = frames_bgr[t]
             frame_iids, frame_boxes = [], []
 
-            for iid in instances.keys():
-                if t in instances[iid].mask_paths:
+            for iid, inst in instances.items():
+                if t in inst.mask_paths:
                     continue
                 if t in tracked_bboxes.get(iid, {}):
                     frame_iids.append(iid)
                     frame_boxes.append(tracked_bboxes[iid][t])
+                    continue
+                if _is_static_scene_label(inst.label):
+                    fallback_box = _nearest_known_box(inst.bboxes, t, max_gap=12)
+                    if fallback_box is not None:
+                        frame_iids.append(iid)
+                        frame_boxes.append(fallback_box)
 
             if not frame_boxes:
                 cb(t + 1, total_frames, f"Frame {t}: no masks")
@@ -687,7 +1128,18 @@ def process_video_for_segmentation(
                 chunk_iids = frame_iids[s : s + chunk]
                 chunk_boxes = np.array(frame_boxes[s : s + chunk], dtype=np.float32)
                 h, w = frame.shape[:2]
-                refined_boxes = _refine_boxes(chunk_boxes, w, h, pad_ratio=box_pad_ratio)
+                refined_boxes = np.stack(
+                    [
+                        _refine_boxes(
+                            np.array([box], dtype=np.float32),
+                            w,
+                            h,
+                            pad_ratio=_pad_ratio_for_label(instances[iid].label, box_pad_ratio),
+                        )[0]
+                        for iid, box in zip(chunk_iids, chunk_boxes)
+                    ],
+                    axis=0,
+                ).astype(np.float32)
                 chunk_masks = sam2_final.masks_from_boxes(
                     frame,
                     refined_boxes,
@@ -704,6 +1156,36 @@ def process_video_for_segmentation(
 
                 for iid, box, mask in zip(chunk_iids, refined_boxes, chunk_masks):
                     inst = instances[iid]
+
+                    if _is_static_scene_label(inst.label):
+                        m = _postprocess_mask(
+                            mask.astype(np.uint8),
+                            min_area=max(mask_min_area, static_mask_min_area),
+                            kernel=max(mask_kernel, static_mask_kernel),
+                        )
+                        inst.label = _relabel_scene_by_geometry(m, inst.label)
+                        m = _shape_scene_mask(m, inst.label)
+                        area_ratio = _mask_area_ratio(m)
+                        if area_ratio <= 0.0 or area_ratio > static_scene_max_area_ratio:
+                            continue
+                        if inst.label == "sky" and _mask_region_ratio(m, 0.7, 1.0) > sky_bottom_max_ratio:
+                            continue
+                        if inst.label == "road" and _mask_region_ratio(m, 0.0, 0.45) > road_top_max_ratio:
+                            continue
+                        mask = m.astype(bool)
+                        if not np.any(mask):
+                            continue
+                    else:
+                        lbl = str(inst.label).strip().lower()
+                        if lbl in _DYNAMIC_BOX_CONSTRAIN_LABELS:
+                            m = _constrain_mask_to_box(mask.astype(np.uint8), box.astype(np.float32), pad_ratio=dynamic_box_clip_pad_ratio)
+                            if lbl == "person":
+                                m = _keep_component_near_center(m, box.astype(np.float32), min_area=dynamic_component_min_area)
+                            m = _postprocess_mask(m, min_area=mask_min_area, kernel=mask_kernel)
+                            if not np.any(m):
+                                continue
+                            mask = m.astype(bool)
+
                     inst.bboxes[t] = [float(v) for v in box.tolist()]
                     ctr = _mask_centroid(mask.astype(np.uint8))
                     if ctr is not None:
@@ -776,6 +1258,7 @@ def process_video_for_segmentation(
             "instances": ui_instances,
             "mask_root": str(masks_root),
             "metadata_path": str(meta_path),
+            "runtime_device": runtime_device,
         }
 
     retry_heights = [int(target_height)]

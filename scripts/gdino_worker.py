@@ -15,10 +15,50 @@ import numpy as np
 def _add_dll_dirs(torch_lib_dir: str | None, cuda_bin_dir: str | None) -> None:
 	if not hasattr(os, "add_dll_directory"):
 		return
-	if torch_lib_dir:
-		os.add_dll_directory(torch_lib_dir)
-	if cuda_bin_dir:
-		os.add_dll_directory(cuda_bin_dir)
+	candidates = [
+		torch_lib_dir,
+		cuda_bin_dir,
+		os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(os.__file__))), "Library", "bin"),
+		os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(os.__file__))), "Scripts"),
+	]
+	seen: set[str] = set()
+	for candidate in candidates:
+		if not candidate:
+			continue
+		if candidate in seen:
+			continue
+		seen.add(candidate)
+		if os.path.isdir(candidate):
+			os.add_dll_directory(candidate)
+
+
+def _patch_ms_deform_attn_when_custom_ops_missing() -> bool:
+	"""Use the PyTorch attention implementation when groundingdino._C is unavailable.
+	This keeps inference working on GPU, albeit slower than the custom op path.
+	"""
+	import groundingdino.models.GroundingDINO.ms_deform_attn as ms_deform_attn
+
+	custom_ok = hasattr(ms_deform_attn, "_C") and hasattr(ms_deform_attn._C, "ms_deform_attn_forward")
+	if custom_ok:
+		return False
+
+	def _apply_fallback(
+		value,
+		value_spatial_shapes,
+		value_level_start_index,
+		sampling_locations,
+		attention_weights,
+		im2col_step,
+	):
+		return ms_deform_attn.multi_scale_deformable_attn_pytorch(
+			value,
+			value_spatial_shapes,
+			sampling_locations,
+			attention_weights,
+		)
+
+	ms_deform_attn.MultiScaleDeformableAttnFunction.apply = staticmethod(_apply_fallback)
+	return True
 
 
 def _xywh_to_xyxy(boxes: np.ndarray) -> np.ndarray:
@@ -79,6 +119,9 @@ def main() -> None:
 	_add_dll_dirs(args.torch_lib_dir, args.cuda_bin_dir)
 
 	from groundingdino.util.inference import load_model, load_image, predict
+	used_fallback = _patch_ms_deform_attn_when_custom_ops_missing()
+	if used_fallback:
+		print("Warning: GroundingDINO custom ops unavailable. Using PyTorch attention fallback.")
 
 	model = load_model(args.config, args.weights)
 	image_source, image = load_image(args.image)

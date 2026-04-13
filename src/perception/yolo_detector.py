@@ -1,5 +1,5 @@
 """
-YOLOv8 detector wrapper for MoodPlay.
+Ultralytics YOLO detector wrapper for MoodPlay.
 """
 from __future__ import annotations
 
@@ -24,10 +24,19 @@ class Detection:
 
 
 class YoloV8Detector:
-    def __init__(self, model: str = "yolo11s.pt", device: Optional[str] = "cuda") -> None:
+    def __init__(self, model: str = "yolo26s.pt", device: Optional[str] = "cuda") -> None:
         if YOLO is None:
             raise ImportError("ultralytics is not installed. Run: pip install ultralytics")
-        self.model = YOLO(model)
+        try:
+            self.model = YOLO(model)
+        except AttributeError as exc:
+            # Newer checkpoints require newer ultralytics modules (for example C3k2).
+            if "C3k2" in str(exc):
+                raise RuntimeError(
+                    "YOLO checkpoint is newer than installed ultralytics. "
+                    "Upgrade with: pip install -U 'ultralytics>=8.4.0,<9'"
+                ) from exc
+            raise
         self.device = device
 
     def detect(

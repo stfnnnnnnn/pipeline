@@ -1,7 +1,8 @@
 from pathlib import Path
-from typing import Dict, List
+import time
 
 import streamlit as st
+import torch
 
 from utils import (
     load_css,
@@ -28,20 +29,32 @@ st.markdown(
     "<p class='obj-sub'>Review keyframes and processed segmentation masks for tracked instances.</p>",
     unsafe_allow_html=True
 )
+video_name = Path(st.session_state["current_video_path"]).name
+st.markdown(f"### Processing ({video_name})")
 st.divider()
 
 
 def run_backend_once():
     progress_text = st.empty()
     progress_bar = st.progress(0)
+    compute_text = st.empty()
+    elapsed_text = st.empty()
+    started_at = time.perf_counter()
+
+    default_device = "GPU (CUDA)" if torch.cuda.is_available() else "CPU"
+    compute_text.caption(f"Compute backend: {default_device}")
+    elapsed_text.caption("Elapsed processing time: 0.00 min")
 
     def cb(cur: int, total: int, msg: str):
         pct = int((cur / max(total, 1)) * 100)
         progress_text.text(f"Status: {msg}")
         progress_bar.progress(max(0, min(100, pct)))
+        elapsed_min = (time.perf_counter() - started_at) / 60.0
+        elapsed_text.caption(f"Elapsed processing time: {elapsed_min:.2f} min")
 
+    run_result = None
     try:
-        result = process_video_for_segmentation(
+        run_result = process_video_for_segmentation(
             video_path=st.session_state["current_video_path"],
             progress_callback=cb,
             target_height=st.session_state.get("target_height", 720),
@@ -53,14 +66,26 @@ def run_backend_once():
         progress_text.empty()
         progress_bar.empty()
 
-    st.session_state["segmentation_result"] = result
-    st.session_state["detection_events"] = build_detection_events_from_result(result)
+    total_minutes = (time.perf_counter() - started_at) / 60.0
+    st.session_state["last_processing_minutes"] = float(total_minutes)
+    elapsed_text.caption(f"Final processing time: {total_minutes:.2f} min")
+
+    runtime_device = str(run_result.get("runtime_device", "cpu")).lower() if isinstance(run_result, dict) else "cpu"
+    runtime_label = "GPU (CUDA)" if runtime_device.startswith("cuda") else "CPU"
+    compute_text.caption(f"Compute backend: {runtime_label}")
+    st.session_state["runtime_device"] = runtime_device
+
+    st.session_state["segmentation_result"] = run_result
+    st.session_state["detection_events"] = build_detection_events_from_result(run_result)
     st.session_state["event_index"] = 0
     st.session_state["instance_filter"] = "All"
 
 
 if "segmentation_result" not in st.session_state:
     run_backend_once()
+
+if "last_processing_minutes" in st.session_state:
+    st.caption(f"Final processing time: {st.session_state['last_processing_minutes']:.2f} min")
 
 result = st.session_state["segmentation_result"]
 events = st.session_state.get("detection_events", [])
@@ -92,6 +117,7 @@ with st.sidebar:
         st.session_state.pop("segmentation_result", None)
         st.session_state.pop("detection_events", None)
         st.session_state.pop("event_index", None)
+        st.session_state.pop("last_processing_minutes", None)
         st.rerun()
 
     all_instance_ids = sorted({e["instance_id"] for e in events})

@@ -28,6 +28,14 @@ mask_refine:
   box_pad_ratio: 0.10
   min_area: 32
   morph_kernel: 1
+detection_filter:
+  yolo_min_conf: 0.22
+  yolo_max_box_area_ratio: 0.72
+  yolo_bus_max_box_area_ratio: 0.58
+  gdino_person_overlap_block_iou: 0.25
+  gdino_scene_min_box_area_ratio: 0.01
+  static_mask_min_area: 256
+  static_mask_kernel: 2
 scene_fallback:
   enabled: true
   track: false
