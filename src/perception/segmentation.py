@@ -43,6 +43,7 @@ class Instance:
 class SimpleDetection:
     bbox_xyxy: np.ndarray
     label: str
+    conf: float = 1.0
 
 
 def _noop_progress(current: int, total: int, message: str) -> None:
@@ -177,6 +178,135 @@ def _postprocess_mask(mask: np.ndarray, min_area: int = 64, kernel: int = 3) -> 
     return (m > 0).astype(np.uint8)
 
 
+def _constrain_mask_to_box(
+    mask: np.ndarray,
+    box: np.ndarray,
+    w: int,
+    h: int,
+    pad_ratio: float = 0.2,
+) -> np.ndarray:
+    if mask is None or mask.size == 0:
+        return mask
+    m = (mask > 0)
+    pb = _pad_box(np.asarray(box, dtype=np.float32), w, h, pad_ratio=pad_ratio)
+    x1 = max(0, min(w - 1, int(np.floor(pb[0]))))
+    y1 = max(0, min(h - 1, int(np.floor(pb[1]))))
+    x2 = max(0, min(w - 1, int(np.ceil(pb[2]))))
+    y2 = max(0, min(h - 1, int(np.ceil(pb[3]))))
+    if x2 <= x1 or y2 <= y1:
+        return np.zeros_like(mask, dtype=np.uint8)
+    out = np.zeros_like(m, dtype=bool)
+    out[y1 : y2 + 1, x1 : x2 + 1] = m[y1 : y2 + 1, x1 : x2 + 1]
+    return out.astype(np.uint8)
+
+
+def _mask_border_touch_ratio(mask: np.ndarray) -> float:
+    m = (mask > 0)
+    if m.size == 0:
+        return 0.0
+    h, w = m.shape[:2]
+    if h == 1 or w == 1:
+        return float(m.mean())
+    border_count = int(
+        m[0, :].sum()
+        + m[h - 1, :].sum()
+        + m[1 : h - 1, 0].sum()
+        + m[1 : h - 1, w - 1].sum()
+    )
+    border_len = (2 * w) + (2 * max(0, h - 2))
+    return float(border_count / max(1, border_len))
+
+
+def _label_threshold_for(
+    label: str,
+    overrides: Dict[str, float],
+    default_value: float,
+) -> float:
+    if not overrides:
+        return float(default_value)
+    name = str(label).lower().strip()
+    if name in overrides:
+        return float(overrides[name])
+    matched = [float(v) for k, v in overrides.items() if str(k).strip() and str(k).lower() in name]
+    if not matched:
+        return float(default_value)
+    return float(min(matched))
+
+
+def _is_mask_plausible(
+    mask: np.ndarray,
+    box: np.ndarray,
+    label: str,
+    w: int,
+    h: int,
+    *,
+    full_frame_reject_ratio: float,
+    global_max_area_ratio: float,
+    large_stuff_max_area_ratio: float,
+    default_max_mask_to_box_ratio: float,
+    large_stuff_max_mask_to_box_ratio: float,
+    min_bbox_area_ratio_for_large_mask: float,
+    border_touch_max_ratio: float,
+    border_relief_bbox_area_ratio: float,
+    large_stuff_labels: set[str],
+    class_guard_overrides: Dict[str, Dict[str, float]],
+) -> bool:
+    m = (mask > 0)
+    mask_area = float(m.sum())
+    if mask_area <= 0:
+        return False
+
+    frame_area = float(max(1, w * h))
+    area_ratio = mask_area / frame_area
+    if area_ratio >= float(full_frame_reject_ratio):
+        return False
+
+    clipped = _clip_box(np.asarray(box, dtype=np.float32), w, h)
+    box_w = max(1.0, float(clipped[2] - clipped[0]))
+    box_h = max(1.0, float(clipped[3] - clipped[1]))
+    box_area = box_w * box_h
+    box_area_ratio = box_area / frame_area
+    mask_to_box = mask_area / max(1.0, box_area)
+    border_touch_ratio = _mask_border_touch_ratio(m)
+
+    label_l = str(label).lower().strip()
+    large_stuff = label_l in large_stuff_labels
+    max_area_ratio = float(large_stuff_max_area_ratio if large_stuff else global_max_area_ratio)
+    max_mask_to_box = float(
+        large_stuff_max_mask_to_box_ratio if large_stuff else default_max_mask_to_box_ratio
+    )
+    local_min_bbox_area_ratio_for_large_mask = float(min_bbox_area_ratio_for_large_mask)
+    local_border_relief_bbox_area_ratio = float(border_relief_bbox_area_ratio)
+
+    class_cfg = class_guard_overrides.get(label_l)
+    if class_cfg is None:
+        for k, v in class_guard_overrides.items():
+            key = str(k).lower().strip()
+            if key and key in label_l:
+                class_cfg = v
+                break
+    if isinstance(class_cfg, dict):
+        if "max_area_ratio" in class_cfg:
+            max_area_ratio = float(class_cfg["max_area_ratio"])
+        if "max_mask_to_box_ratio" in class_cfg:
+            max_mask_to_box = float(class_cfg["max_mask_to_box_ratio"])
+        if "min_bbox_area_ratio_for_large_mask" in class_cfg:
+            local_min_bbox_area_ratio_for_large_mask = float(class_cfg["min_bbox_area_ratio_for_large_mask"])
+        if "border_relief_bbox_area_ratio" in class_cfg:
+            local_border_relief_bbox_area_ratio = float(class_cfg["border_relief_bbox_area_ratio"])
+
+    if area_ratio > max_area_ratio and box_area_ratio < local_min_bbox_area_ratio_for_large_mask:
+        return False
+    if mask_to_box > max_mask_to_box and box_area_ratio < local_min_bbox_area_ratio_for_large_mask:
+        return False
+    if (
+        border_touch_ratio > float(border_touch_max_ratio)
+        and box_area_ratio < local_border_relief_bbox_area_ratio
+    ):
+        return False
+    return True
+
+
 def _fill_mask_holes(mask: np.ndarray) -> np.ndarray:
     if mask is None or mask.size == 0:
         return mask
@@ -223,7 +353,7 @@ def process_video_for_segmentation(
     *,
     data_root: str = "data",
     target_height: int = 720,
-    yolo_model: str = "models/checkpoints/yolo/yolo11s.pt",
+    yolo_model: str = "models/checkpoints/yolo/yolo26s.pt",
     yolo_conf: float = 0.25,
     yolo_iou: float = 0.6,
     keyframe_stride: int = 12,
@@ -232,16 +362,17 @@ def process_video_for_segmentation(
     max_total_frames: Optional[int] = None,
     clean_output_dirs: bool = True,
     save_npy_masks: bool = False,
-    cotracker_checkpoint: str = "models/checkpoints/cotracker/cotracker2.pth",
+    cotracker_checkpoint: str = "models/checkpoints/cotracker/cotracker3.pth",
     sam2_model_cfg: str = "configs/perception/sam2_hiera_l.yaml",
     sam2_checkpoint: str = "models/checkpoints/sam2/sam2_hiera_large.pt",
     target_labels: Optional[List[str]] = None,
     device: str = "cuda",
-    yolo_config_path: str = "configs/perception/yolo11_s.yaml",
-    cotracker_config_path: str = "configs/perception/cotracker2.yaml",
+    yolo_config_path: str = "configs/perception/yolo26_s.yaml",
+    cotracker_config_path: str = "configs/perception/cotracker3.yaml",
     grounding_dino_config_path: str = "configs/perception/grounding_dino.yaml",
 ) -> Dict[str, Any]:
     cb = progress_callback or _noop_progress
+    runtime_device = str(device)
 
     # ---------- Config loading (YAML -> runtime args) ----------
     yolo_cfg = _load_yaml(yolo_config_path)
@@ -252,6 +383,7 @@ def process_video_for_segmentation(
     yolo_conf = float(yolo_cfg.get("conf_threshold", yolo_conf))
     yolo_iou = float(yolo_cfg.get("iou_threshold", yolo_iou))
     device = str(yolo_cfg.get("device", device))
+    runtime_device = str(device)
 
     label_aliases_cfg = yolo_cfg.get("label_aliases", {})
     label_aliases: Dict[str, str] = {}
@@ -263,8 +395,55 @@ def process_video_for_segmentation(
     if not isinstance(mask_cfg, dict):
         mask_cfg = {}
     box_pad_ratio = float(mask_cfg.get("box_pad_ratio", 0.06))
+    constrain_to_box_pad_ratio = float(mask_cfg.get("constrain_to_box_pad_ratio", 0.2))
     mask_min_area = int(mask_cfg.get("min_area", 32))
     mask_kernel = int(mask_cfg.get("morph_kernel", 3))
+
+    guard_cfg = yolo_cfg.get("mask_guard", {})
+    if not isinstance(guard_cfg, dict):
+        guard_cfg = {}
+    full_frame_reject_ratio = float(guard_cfg.get("full_frame_reject_ratio", 0.95))
+    global_max_area_ratio = float(guard_cfg.get("global_max_area_ratio", 0.72))
+    large_stuff_max_area_ratio = float(guard_cfg.get("large_stuff_max_area_ratio", 0.9))
+    default_max_mask_to_box_ratio = float(guard_cfg.get("default_max_mask_to_box_ratio", 2.6))
+    large_stuff_max_mask_to_box_ratio = float(
+        guard_cfg.get("large_stuff_max_mask_to_box_ratio", 4.4)
+    )
+    min_bbox_area_ratio_for_large_mask = float(
+        guard_cfg.get("min_bbox_area_ratio_for_large_mask", 0.18)
+    )
+    border_touch_max_ratio = float(guard_cfg.get("border_touch_max_ratio", 0.95))
+    border_relief_bbox_area_ratio = float(guard_cfg.get("border_relief_bbox_area_ratio", 0.42))
+    class_guard_overrides_cfg = guard_cfg.get("class_overrides", {})
+    class_guard_overrides: Dict[str, Dict[str, float]] = {}
+    if isinstance(class_guard_overrides_cfg, dict):
+        for cls_name, cls_cfg in class_guard_overrides_cfg.items():
+            if not isinstance(cls_cfg, dict):
+                continue
+            clean_cfg: Dict[str, float] = {}
+            for k, v in cls_cfg.items():
+                if isinstance(v, (int, float)):
+                    clean_cfg[str(k)] = float(v)
+            if clean_cfg:
+                class_guard_overrides[str(cls_name).lower().strip()] = clean_cfg
+    large_stuff_labels_cfg = guard_cfg.get(
+        "large_stuff_labels",
+        ["road", "street", "sidewalk", "sky", "building", "house", "wall", "mountain", "water"],
+    )
+    if isinstance(large_stuff_labels_cfg, list):
+        large_stuff_labels = {str(x).lower().strip() for x in large_stuff_labels_cfg if str(x).strip()}
+    else:
+        large_stuff_labels = {
+            "road",
+            "street",
+            "sidewalk",
+            "sky",
+            "building",
+            "house",
+            "wall",
+            "mountain",
+            "water",
+        }
 
     scene_cfg = yolo_cfg.get("scene_fallback", {})
     scene_enabled = False
@@ -284,6 +463,13 @@ def process_video_for_segmentation(
     gdino_box_pad_ratio = float(gdino_cfg.get("box_pad_ratio", box_pad_ratio))
     gdino_mask_selection = str(gdino_cfg.get("mask_selection", "area"))
     gdino_area_weight = float(gdino_cfg.get("area_weight", 0.4))
+    gdino_score_threshold_default = float(gdino_cfg.get("score_threshold", 0.0))
+    gdino_score_thresholds_cfg = gdino_cfg.get("score_thresholds", {})
+    gdino_score_thresholds: Dict[str, float] = {}
+    if isinstance(gdino_score_thresholds_cfg, dict):
+        for k, v in gdino_score_thresholds_cfg.items():
+            if isinstance(v, (int, float)):
+                gdino_score_thresholds[str(k).lower().strip()] = float(v)
 
     cotracker_checkpoint = str(cot_cfg.get("checkpoint", cotracker_checkpoint))
     tracker_points_per_instance = int(cot_cfg.get("points_per_instance", tracker_points_per_instance))
@@ -325,6 +511,7 @@ def process_video_for_segmentation(
     else:
         max_total_frames = None
     device = str(cot_cfg.get("device", device))
+    runtime_device = str(device)
 
     if max_frames_per_chunk is None and not torch.cuda.is_available():
         max_frames_per_chunk = 8
@@ -334,6 +521,7 @@ def process_video_for_segmentation(
         target_labels = ["person", "tie", "handbag", "backpack", "umbrella", "suitcase"]
 
     def _run_once(max_h: int) -> Dict[str, Any]:
+        nonlocal runtime_device
         data_root_p = Path(data_root)
         frames_dir = data_root_p / "extracted_frames"
         masks_root = data_root_p / "intermediate" / "masks"
@@ -406,7 +594,13 @@ def process_video_for_segmentation(
             if gdino_detector is not None:
                 gdino_raw = gdino_detector.detect(frame_paths[fidx])
                 for gd in gdino_raw:
-                    gdino_dets.append(SimpleDetection(bbox_xyxy=gd["bbox_xyxy"], label=gd["label"]))
+                    gdino_dets.append(
+                        SimpleDetection(
+                            bbox_xyxy=gd["bbox_xyxy"],
+                            label=gd["label"],
+                            conf=float(gd.get("score", 1.0)),
+                        )
+                    )
 
             if not yolo_dets and not gdino_dets:
                 if scene_enabled:
@@ -519,6 +713,19 @@ def process_video_for_segmentation(
                             ],
                             axis=0,
                         ).astype(bool)
+                        chunk_masks = np.stack(
+                            [
+                                _constrain_mask_to_box(
+                                    m.astype(np.uint8),
+                                    b,
+                                    w,
+                                    h,
+                                    pad_ratio=constrain_to_box_pad_ratio,
+                                )
+                                for m, b in zip(chunk_masks, chunk_boxes)
+                            ],
+                            axis=0,
+                        ).astype(bool)
                         chunk_masks = _resolve_mask_overlaps(chunk_masks)
                     masks_out.append(chunk_masks)
                 if masks_out:
@@ -553,6 +760,33 @@ def process_video_for_segmentation(
             curr_id_to_bbox: Dict[int, np.ndarray] = {}
 
             for det, mask in zip(dets, masks):
+                if isinstance(det, SimpleDetection):
+                    gdino_min_score = _label_threshold_for(
+                        det.label,
+                        gdino_score_thresholds,
+                        gdino_score_threshold_default,
+                    )
+                    if float(det.conf) < float(gdino_min_score):
+                        continue
+                if not _is_mask_plausible(
+                    mask.astype(np.uint8),
+                    det.bbox_xyxy,
+                    det.label,
+                    w,
+                    h,
+                    full_frame_reject_ratio=full_frame_reject_ratio,
+                    global_max_area_ratio=global_max_area_ratio,
+                    large_stuff_max_area_ratio=large_stuff_max_area_ratio,
+                    default_max_mask_to_box_ratio=default_max_mask_to_box_ratio,
+                    large_stuff_max_mask_to_box_ratio=large_stuff_max_mask_to_box_ratio,
+                    min_bbox_area_ratio_for_large_mask=min_bbox_area_ratio_for_large_mask,
+                    border_touch_max_ratio=border_touch_max_ratio,
+                    border_relief_bbox_area_ratio=border_relief_bbox_area_ratio,
+                    large_stuff_labels=large_stuff_labels,
+                    class_guard_overrides=class_guard_overrides,
+                ):
+                    continue
+
                 best_id, best_score = None, 0.0
                 for iid, pb in prev_key_bboxes.items():
                     if iid in instances and instances[iid].label != det.label:
@@ -605,7 +839,7 @@ def process_video_for_segmentation(
                 curr_id_to_bbox[iid] = det.bbox_xyxy.copy()
 
             prev_key_bboxes = curr_id_to_bbox
-            cb(i + 1, len(keyframes), f"Keyframe {fidx}: {len(dets)} detections")
+            cb(i + 1, len(keyframes), f"Keyframe {fidx}: {len(assigned)} detections")
 
         del detector, sam2
         _clear_gpu()
@@ -633,6 +867,7 @@ def process_video_for_segmentation(
                 "instances": [],
                 "mask_root": str(masks_root),
                 "metadata_path": str(meta_path),
+                "runtime_device": runtime_device,
             }
 
         # ---------- Phase B ----------
@@ -643,6 +878,7 @@ def process_video_for_segmentation(
             max_frames_per_chunk=max_frames_per_chunk,
         )
         tracked_points = tracker.track_points(frames_bgr, instance_seed_points)
+        runtime_device = str(getattr(tracker, "device", runtime_device))
         del tracker
         _clear_gpu()
         cb(1, 1, "Phase B complete")
@@ -683,6 +919,7 @@ def process_video_for_segmentation(
                 continue
 
             chunk = sam2_chunk
+            kept_in_frame = 0
             for s in range(0, len(frame_boxes), chunk):
                 chunk_iids = frame_iids[s : s + chunk]
                 chunk_boxes = np.array(frame_boxes[s : s + chunk], dtype=np.float32)
@@ -700,10 +937,43 @@ def process_video_for_segmentation(
                         [_postprocess_mask(m.astype(np.uint8), min_area=mask_min_area, kernel=mask_kernel) for m in chunk_masks],
                         axis=0,
                     ).astype(bool)
+                    chunk_masks = np.stack(
+                        [
+                            _constrain_mask_to_box(
+                                m.astype(np.uint8),
+                                b,
+                                w,
+                                h,
+                                pad_ratio=constrain_to_box_pad_ratio,
+                            )
+                            for m, b in zip(chunk_masks, refined_boxes)
+                        ],
+                        axis=0,
+                    ).astype(bool)
                     chunk_masks = _resolve_mask_overlaps(chunk_masks)
 
+                kept_in_chunk = 0
                 for iid, box, mask in zip(chunk_iids, refined_boxes, chunk_masks):
                     inst = instances[iid]
+                    if not _is_mask_plausible(
+                        mask.astype(np.uint8),
+                        box,
+                        inst.label,
+                        w,
+                        h,
+                        full_frame_reject_ratio=full_frame_reject_ratio,
+                        global_max_area_ratio=global_max_area_ratio,
+                        large_stuff_max_area_ratio=large_stuff_max_area_ratio,
+                        default_max_mask_to_box_ratio=default_max_mask_to_box_ratio,
+                        large_stuff_max_mask_to_box_ratio=large_stuff_max_mask_to_box_ratio,
+                        min_bbox_area_ratio_for_large_mask=min_bbox_area_ratio_for_large_mask,
+                        border_touch_max_ratio=border_touch_max_ratio,
+                        border_relief_bbox_area_ratio=border_relief_bbox_area_ratio,
+                        large_stuff_labels=large_stuff_labels,
+                        class_guard_overrides=class_guard_overrides,
+                    ):
+                        continue
+
                     inst.bboxes[t] = [float(v) for v in box.tolist()]
                     ctr = _mask_centroid(mask.astype(np.uint8))
                     if ctr is not None:
@@ -717,8 +987,10 @@ def process_video_for_segmentation(
                         frame_mask_dir / f"instance_{iid:04d}.png",
                         save_npy=save_npy_masks,
                     )
+                    kept_in_chunk += 1
+                kept_in_frame += kept_in_chunk
 
-            cb(t + 1, total_frames, f"Frame {t}: generated {len(frame_boxes)} masks")
+            cb(t + 1, total_frames, f"Frame {t}: generated {kept_in_frame} masks")
 
         del sam2_final
         _clear_gpu()
@@ -776,6 +1048,7 @@ def process_video_for_segmentation(
             "instances": ui_instances,
             "mask_root": str(masks_root),
             "metadata_path": str(meta_path),
+            "runtime_device": runtime_device,
         }
 
     retry_heights = [int(target_height)]

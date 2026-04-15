@@ -24,7 +24,7 @@ class Detection:
 
 
 class YoloV8Detector:
-    def __init__(self, model: str = "yolo11s.pt", device: Optional[str] = "cuda") -> None:
+    def __init__(self, model: str = "yolo26s.pt", device: Optional[str] = "cuda") -> None:
         if YOLO is None:
             raise ImportError("ultralytics is not installed. Run: pip install ultralytics")
         self.model = YOLO(model)

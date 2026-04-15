@@ -1,0 +1,8 @@
+# CoTracker3 Tracking Configuration
+checkpoint: "models/checkpoints/cotracker/cotracker3.pth"
+device: "cuda"
+points_per_instance: 72
+keyframe_stride: 4
+max_frames_per_chunk: 24
+max_total_frames: null
+

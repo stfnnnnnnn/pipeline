@@ -132,9 +132,10 @@ class GroundingDinoDetector:
 			try:
 				bbox = np.array(item["bbox"], dtype=np.float32)
 				label = str(item.get("label", "object")).strip()
+				score = float(item.get("score", 1.0))
 				if bbox.shape != (4,):
 					continue
-				out.append({"bbox_xyxy": bbox, "label": label})
+				out.append({"bbox_xyxy": bbox, "label": label, "score": score})
 			except Exception:
 				continue
 		return out

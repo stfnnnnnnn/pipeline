@@ -51,7 +51,6 @@ if uploaded_file is not None:
             target_height = st.selectbox("Processing resolution", [720, 480], index=0)
             keyframe_stride = st.slider("Keyframe stride", min_value=4, max_value=24, value=12, step=1)
 
-            st.markdown("### Mask Generation")
             st.markdown("### Tracking Limits")
             keep_chunk_default = st.checkbox(
                 "Keep default max frames per chunk",

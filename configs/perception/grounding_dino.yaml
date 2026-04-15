@@ -7,25 +7,44 @@ script_path: "scripts/gdino_worker.py"
 model_config: "configs/perception/grounding_dino/GroundingDINO_SwinB.cfg.py"
 model_weights: "models/checkpoints/grounding_dino/groundingdino_swinb_cogcoor.pth"
 device: "cuda"
-box_threshold: 0.35
-text_threshold: 0.25
-max_detections: 50
+box_threshold: 0.28
+text_threshold: 0.20
+max_detections: 120
 box_pad_ratio: 0.15
-mask_selection: "area"
-area_weight: 0.4
+mask_selection: "score_area"
+area_weight: 0.45
+score_threshold: 0.0
+score_thresholds:
+  road: 0.12
+  street: 0.14
+  building: 0.16
+  house: 0.14
+  sky: 0.10
 prompts:
   - "building"
+  - "skyscraper"
+  - "apartment building"
   - "house"
+  - "facade"
   - "tree"
   - "forest"
   - "road"
+  - "asphalt road"
   - "street"
+  - "lane marking"
   - "sidewalk"
+  - "pavement"
   - "sky"
+  - "cloudy sky"
+  - "horizon"
+  - "bridge"
+  - "overpass"
   - "wall"
+  - "fence"
   - "grass"
   - "mountain"
   - "water"
+
 # DLL dirs required on Windows before importing groundingdino._C
 # Update these if your paths differ.
 torch_lib_dir: "C:\\Users\\LENOVO\\miniconda3\\envs\\gdino310\\Lib\\site-packages\\torch\\lib"

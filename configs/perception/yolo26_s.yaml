@@ -1,0 +1,82 @@
+# YOLO26s Configuration for MoodPlay (detection + mask quality)
+model_path: "models/checkpoints/yolo/yolo26s.pt"
+device: "cuda"
+conf_threshold: 0.18
+iou_threshold: 0.55
+target_labels:
+  - "person"
+  - "tie"
+  - "handbag"
+  - "backpack"
+  - "umbrella"
+  - "suitcase"
+  - "car"
+  - "truck"
+  - "bus"
+  - "motorcycle"
+  - "bicycle"
+  - "train"
+  - "boat"
+  - "traffic light"
+  - "stop sign"
+  - "bench"
+  - "chair"
+  - "couch"
+  - "potted plant"
+  - "road"
+  - "street"
+  - "sidewalk"
+  - "building"
+  - "house"
+  - "sky"
+  - "wall"
+label_aliases: {}
+mask_refine:
+  box_pad_ratio: 0.08
+  constrain_to_box_pad_ratio: 0.22
+  min_area: 96
+  morph_kernel: 3
+mask_guard:
+  full_frame_reject_ratio: 0.95
+  global_max_area_ratio: 0.72
+  large_stuff_max_area_ratio: 0.90
+  default_max_mask_to_box_ratio: 2.6
+  large_stuff_max_mask_to_box_ratio: 4.4
+  min_bbox_area_ratio_for_large_mask: 0.18
+  border_touch_max_ratio: 0.95
+  border_relief_bbox_area_ratio: 0.42
+  class_overrides:
+    road:
+      max_area_ratio: 0.94
+      max_mask_to_box_ratio: 6.8
+      min_bbox_area_ratio_for_large_mask: 0.08
+      border_relief_bbox_area_ratio: 0.12
+    building:
+      max_area_ratio: 0.94
+      max_mask_to_box_ratio: 6.2
+      min_bbox_area_ratio_for_large_mask: 0.10
+      border_relief_bbox_area_ratio: 0.15
+    house:
+      max_area_ratio: 0.92
+      max_mask_to_box_ratio: 5.8
+      min_bbox_area_ratio_for_large_mask: 0.10
+      border_relief_bbox_area_ratio: 0.15
+    sky:
+      max_area_ratio: 0.95
+      max_mask_to_box_ratio: 8.0
+      min_bbox_area_ratio_for_large_mask: 0.05
+      border_relief_bbox_area_ratio: 0.05
+  large_stuff_labels:
+    - "road"
+    - "street"
+    - "sidewalk"
+    - "sky"
+    - "building"
+    - "house"
+    - "wall"
+    - "mountain"
+    - "water"
+scene_fallback:
+  enabled: false
+  track: false
+  label: "scene"
