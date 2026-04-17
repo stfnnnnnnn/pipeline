@@ -7,12 +7,13 @@ script_path: "scripts/gdino_worker.py"
 model_config: "configs/perception/grounding_dino/GroundingDINO_SwinB.cfg.py"
 model_weights: "models/checkpoints/grounding_dino/groundingdino_swinb_cogcoor.pth"
 device: "cuda"
-box_threshold: 0.28
-text_threshold: 0.20
-max_detections: 120
-box_pad_ratio: 0.15
-mask_selection: "score_area"
-area_weight: 0.45
+box_threshold: 0.30
+text_threshold: 0.24
+max_detections: 80
+max_prompts: 10
+box_pad_ratio: 0.10
+mask_selection: "score"
+area_weight: 0.10
 score_threshold: 0.0
 score_thresholds:
   road: 0.12
@@ -20,30 +21,78 @@ score_thresholds:
   building: 0.16
   house: 0.14
   sky: 0.10
+default_preset: "urban_street"
+default_clutter: "medium"
+
+runtime:
+  preset: "urban_street"
+  clutter_level: "medium"
+
+environment_presets:
+  urban_street:
+    box_threshold:
+      low: 0.24
+      medium: 0.30
+      high: 0.34
+    text_threshold:
+      low: 0.20
+      medium: 0.24
+      high: 0.28
+    prompts:
+      - "road surface"
+      - "lane markings"
+      - "building facade"
+      - "urban building"
+      - "street tree"
+      - "tree canopy"
+      - "sidewalk curb"
+      - "parked vehicle"
+      - "traffic light pole"
+      - "street sign"
+      - "pedestrian crossing"
+      - "skyline horizon"
+  indoor_room:
+    box_threshold:
+      low: 0.25
+      medium: 0.30
+      high: 0.34
+    text_threshold:
+      low: 0.18
+      medium: 0.22
+      high: 0.26
+    prompts:
+      - "sofa couch"
+      - "dining chair"
+      - "table surface"
+      - "window frame"
+      - "floor area"
+      - "wall corner"
+      - "indoor plant"
+  nature_trail:
+    box_threshold:
+      low: 0.24
+      medium: 0.29
+      high: 0.33
+    text_threshold:
+      low: 0.18
+      medium: 0.22
+      high: 0.26
+    prompts:
+      - "tree trunk"
+      - "foliage canopy"
+      - "trail path"
+      - "rock surface"
+      - "water stream"
+      - "mountain ridge"
+
 prompts:
-  - "building"
-  - "skyscraper"
-  - "apartment building"
-  - "house"
-  - "facade"
-  - "tree"
-  - "forest"
-  - "road"
-  - "asphalt road"
-  - "street"
-  - "lane marking"
-  - "sidewalk"
-  - "pavement"
-  - "sky"
-  - "cloudy sky"
-  - "horizon"
-  - "bridge"
-  - "overpass"
-  - "wall"
-  - "fence"
-  - "grass"
-  - "mountain"
-  - "water"
+  - "road surface"
+  - "building facade"
+  - "street tree"
+  - "tree canopy"
+  - "sidewalk curb"
+  - "parked vehicle"
+  - "skyline horizon"
 
 # DLL dirs required on Windows before importing groundingdino._C
 # Update these if your paths differ.

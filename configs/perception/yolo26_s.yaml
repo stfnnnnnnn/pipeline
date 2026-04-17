@@ -1,8 +1,9 @@
 # YOLO26s Configuration for MoodPlay (detection + mask quality)
 model_path: "models/checkpoints/yolo/yolo26s.pt"
 device: "cuda"
-conf_threshold: 0.18
+conf_threshold: 0.26
 iou_threshold: 0.55
+detection_fusion_iom: 0.70
 target_labels:
   - "person"
   - "tie"
@@ -23,6 +24,7 @@ target_labels:
   - "chair"
   - "couch"
   - "potted plant"
+  - "tree"
   - "road"
   - "street"
   - "sidewalk"
@@ -30,17 +32,44 @@ target_labels:
   - "house"
   - "sky"
   - "wall"
-label_aliases: {}
+label_aliases:
+  "fully visible person": "person"
+  "visible person": "person"
+  "full person": "person"
+  "person object": "person"
+  "asphalt roadway": "road"
+  "road lane markings": "road"
+  "road surface": "road"
+  "building facade": "building"
+  "urban building": "building"
+  "street tree": "tree"
+  "tree canopy": "tree"
+  "tree trunk": "tree"
+  "pedestrian crossing": "person"
+  "parked vehicle": "car"
+  "skyline horizon": "sky"
 mask_refine:
   box_pad_ratio: 0.08
   constrain_to_box_pad_ratio: 0.22
   min_area: 96
   morph_kernel: 3
+vehicle_mask_recovery:
+  labels:
+    - "car"
+    - "bus"
+    - "truck"
+    - "train"
+    - "boat"
+    - "motorcycle"
+    - "bicycle"
+  disable_negative_points: true
+  min_mask_to_box_ratio: 0.22
+  min_provisional_gain: 1.20
 mask_guard:
   full_frame_reject_ratio: 0.95
   global_max_area_ratio: 0.72
   large_stuff_max_area_ratio: 0.90
-  default_max_mask_to_box_ratio: 2.6
+  default_max_mask_to_box_ratio: 2.2
   large_stuff_max_mask_to_box_ratio: 4.4
   min_bbox_area_ratio_for_large_mask: 0.18
   border_touch_max_ratio: 0.95
