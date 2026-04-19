@@ -7,6 +7,22 @@ This repository contains a Streamlit app and a multi-stage perception pipeline:
 3. Phase C: SAM2 masks on all frames
 4. Optional: XMem propagation for temporal consistency
 
+## Executive summary of recent platform changes
+
+- Detection stack pivot: default detector migrated from legacy YOLOv26-style flow to GroundingDINO open-vocabulary detection.
+- Segmentation quality upgrades: depth-aware fusion, strict semantic depth hierarchy, and accessory-safe negative-point handling to reduce mask fragmentation and crossfire.
+- Tracking policy update: background classes are treated as large-stuff context and are excluded from foreground tracking paths where appropriate.
+- Runtime architecture: GroundingDINO now runs from a dedicated `gdino310` conda environment through subprocess isolation for Windows stability.
+- Compatibility posture: YOLO-related installation remains available in setup automation for legacy experiments and rollback workflows.
+
+## Component roles in current pipeline
+
+- GroundingDINO (`scripts/gdino_worker.py`, `src/perception/grounding_dino_detector.py`): open-vocabulary box proposal generation.
+- SAM2 (`src/perception/sam_segmenter.py`): per-box mask generation and multimask candidate selection.
+- CoTracker (`src/perception/cotracker_wrapper.py`): persistent motion-aware track support and temporal continuity.
+- XMem (`src/perception/xmem_wrapper.py`): optional long-range temporal propagation.
+- Orchestrator (`src/perception/segmentation.py`): fusion, association, depth-aware subtraction, and end-to-end phase execution.
+
 Two conda environments are required:
 - `vidcolor` for the main app (SAM2/CoTracker)
 - `gdino310` for GroundingDINO (separate env for Windows DLL stability)
@@ -16,6 +32,14 @@ Two conda environments are required:
 ### Quick setup (Windows)
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\setup_windows.ps1
+```
+
+`setup_windows.ps1` is the primary installer for this repository. It creates/updates `vidcolor` and `gdino310`, installs GroundingDINO, installs XMem dependencies in `vidcolor`, and keeps YOLO compatibility installation.
+
+Optional wrapper script is also available:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup.ps1
 ```
 
 ### A. Main app env (vidcolor)
@@ -28,6 +52,18 @@ python -m pip install torch torchvision torchaudio --index-url https://download.
 
 # Install remaining deps
 python -m pip install -r requirements.txt
+
+# Install XMem runtime dependencies
+python -m pip install -r XMem/requirements.txt
+
+# Ensure base XMem dependencies are present
+python -m pip install torch torchvision opencv-python pillow tqdm
+```
+
+Install YOLO compatibility packages (optional runtime path, retained intentionally):
+
+```powershell
+python -m pip install -U ultralytics
 ```
 
 Verify CUDA:
@@ -103,5 +139,7 @@ streamlit run app.py
 
 - GroundingDINO runs in `gdino310` via `conda run` from the main app.
 - Torch must be CUDA-enabled in both envs.
+- XMem dependencies are installed in `vidcolor` from `XMem/requirements.txt` plus base packages (`torch`, `torchvision`, `opencv-python`, `pillow`, `tqdm`).
+- YOLO installation is retained in setup scripts for backward compatibility, but GroundingDINO is the default detector in the current pipeline.
 - If `conda` is not found by subprocess, update `conda_exe` in
 	configs/perception/grounding_dino.yaml.

@@ -1,4 +1,7 @@
 # Install CUDA-enabled torch/torchvision/torchaudio separately (see README).
+# GroundingDINO is installed in the dedicated gdino310 environment.
+# YOLO package is intentionally retained for legacy compatibility workflows.
+# XMem dependencies are also installed from XMem/requirements.txt in setup_windows.ps1.
 diffusers==0.30.0
 transformers==4.44.0
 accelerate==0.34.0
@@ -20,3 +23,9 @@ pytest==8.3.2
 pytest-cov==5.0.0
 psutil==6.0.0
 rich==13.7.1
+ultralytics==8.3.0
+progressbar2
+gdown
+gitpython
+hickle
+tensorboard
