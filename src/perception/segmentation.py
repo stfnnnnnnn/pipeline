@@ -30,7 +30,6 @@ from .cotracker_wrapper import CoTrackerPersistentTracker
 from .grounding_dino_detector import GroundingDinoDetector
 from .sam_segmenter import Sam2Masker
 from .xmem_wrapper import XMemMaskPropagator, XMemRuntimeConfig
-from .yolo_detector import YoloV8Detector
 
 
 @dataclass
@@ -90,20 +89,21 @@ SEMANTIC_DEPTH: Dict[str, int] = {
     "skyline horizon": 0,
     "building": 1,
     "building facade": 1,
-    "urban building": 1,
     "wall": 1,
-    "road": 1,
-    "street": 1,
-    "sidewalk": 1,
-    "tree": 1,
-    "car": 2,
-    "bus": 2,
-    "truck": 2,
-    "bench": 2,
-    "person": 3,
-    "pedestrian crossing": 3,
-    "handbag": 4,
-    "backpack": 4,
+    "road": 2,
+    "road surface": 2,
+    "sidewalk": 3,
+    "sidewalk or pavement": 3,
+    "tree": 4,
+    "street sign": 4,
+    "traffic light": 4,
+    "car": 5,
+    "bus": 5,
+    "truck": 5,
+    "person": 6,
+    "pedestrian": 6,
+    "handbag": 7,
+    "backpack": 7,
 }
 
 
@@ -355,8 +355,7 @@ def _cosine_sim(a: np.ndarray, b: np.ndarray) -> float:
     return float(np.dot(a, b) / denom)
 
 
-def _fuse_detections(detections: List[SimpleDetection], iom_thresh: float = 0.70) -> List[SimpleDetection]:
-    """Deduplicate same-label detections from different detectors before masking."""
+def _fuse_detections(detections: List[SimpleDetection], iom_thresh: float = 0.85) -> List[SimpleDetection]:
     if not detections:
         return []
 
@@ -365,12 +364,26 @@ def _fuse_detections(detections: List[SimpleDetection], iom_thresh: float = 0.70
 
     for det in sorted_dets:
         duplicate = False
+        det_label = _normalize_label_token(det.label)
+        det_depth = SEMANTIC_DEPTH.get(det_label, 2)
+
         for kept in fused:
-            if _normalize_label_token(det.label) != _normalize_label_token(kept.label):
+            kept_label = _normalize_label_token(kept.label)
+            kept_depth = SEMANTIC_DEPTH.get(kept_label, 2)
+            if det_depth != kept_depth:
                 continue
-            if _bbox_iom(det.bbox_xyxy, kept.bbox_xyxy) >= iom_thresh:
-                duplicate = True
-                break
+
+            if det_label == kept_label:
+                # SAME EXACT LABEL: aggressively suppress nested duplicates.
+                if _bbox_iom(det.bbox_xyxy, kept.bbox_xyxy) >= iom_thresh:
+                    duplicate = True
+                    break
+            else:
+                # DIFFERENT LABELS on same depth: suppress only near-identical boxes.
+                if _bbox_iou(det.bbox_xyxy, kept.bbox_xyxy) >= 0.70:
+                    duplicate = True
+                    break
+
         if not duplicate:
             fused.append(det)
 
@@ -379,6 +392,11 @@ def _fuse_detections(detections: List[SimpleDetection], iom_thresh: float = 0.70
 
 def _normalize_label_token(label: str) -> str:
     return " ".join(str(label).strip().lower().split())
+
+
+def _is_large_stuff_label(label: str, large_stuff_labels: List[str]) -> bool:
+    ls = {_normalize_label_token(x) for x in large_stuff_labels if str(x).strip()}
+    return _normalize_label_token(label) in ls
 
 
 def _suppress_negative_points_for_labels(
@@ -474,7 +492,6 @@ def _canonicalize_label(
     raw_label: str,
     *,
     target_labels: Optional[List[str]] = None,
-    label_aliases: Optional[Dict[str, str]] = None,
 ) -> str:
     s = " ".join(str(raw_label).strip().lower().replace("-", " ").split())
     if not s:
@@ -490,9 +507,6 @@ def _canonicalize_label(
 
     if s.endswith(" object"):
         s = s[:-7].strip()
-
-    if label_aliases and s in label_aliases:
-        s = " ".join(str(label_aliases[s]).strip().lower().split())
 
     if target_labels:
         tgt = [" ".join(str(t).strip().lower().split()) for t in target_labels if str(t).strip()]
@@ -559,10 +573,15 @@ def _negative_points_from_overlap(
     for rank_bg in range(len(order) - 1, -1, -1):
         bg_idx = int(order[rank_bg])
         bg_box = boxes_xyxy[bg_idx]
+        bg_depth = int(depths[bg_idx]) if use_depth and depths is not None else 2
         for rank_fg in range(0, rank_bg):
             fg_idx = int(order[rank_fg])
             if use_depth and depths is not None:
-                if int(depths[fg_idx]) <= int(depths[bg_idx]):
+                fg_depth = int(depths[fg_idx])
+                if fg_depth <= bg_depth:
+                    continue
+                # Avoid punching accessory-shaped holes directly into human prompts.
+                if fg_depth == 7 and bg_depth == 6:
                     continue
             iof = _bbox_iof(bg_box, boxes_xyxy[fg_idx])
             if iof < overlap_iof:
@@ -644,16 +663,7 @@ def _binary_mask_iof(bg_mask: np.ndarray, fg_mask: np.ndarray) -> float:
 
 
 def _temporal_mask_smooth(prev_mask: Optional[np.ndarray], cur_mask: np.ndarray) -> np.ndarray:
-    if prev_mask is None:
-        return cur_mask
-
-    iou = _binary_mask_iou(prev_mask, cur_mask)
-    cur_area = int((cur_mask > 0).sum())
-    prev_area = int((prev_mask > 0).sum())
-
-    if iou < 0.05 and cur_area < max(16, int(prev_area * 0.45)):
-        return prev_mask
-
+    # Trust CoTracker and XMem temporal consistency; geometric rollback can freeze masks.
     return cur_mask
 
 
@@ -889,9 +899,6 @@ def process_video_for_segmentation(
     *,
     data_root: str = "data",
     target_height: int = 720,
-    yolo_model: str = "models/checkpoints/yolo/yolo26s.pt",
-    yolo_conf: float = 0.25,
-    yolo_iou: float = 0.6,
     keyframe_stride: int = 12,
     tracker_points_per_instance: int = 24,
     max_frames_per_chunk: Optional[int] = None,
@@ -903,7 +910,6 @@ def process_video_for_segmentation(
     sam2_checkpoint: str = "models/checkpoints/sam2/sam2_hiera_large.pt",
     target_labels: Optional[List[str]] = None,
     device: str = "cuda",
-    yolo_config_path: str = "configs/perception/yolo26_s.yaml",
     cotracker_config_path: str = "configs/perception/cotracker3.yaml",
     grounding_dino_config_path: str = "configs/perception/grounding_dino.yaml",
     xmem_config_path: str = "configs/perception/xmem.yaml",
@@ -911,30 +917,20 @@ def process_video_for_segmentation(
     cb = progress_callback or _noop_progress
 
     # ---------- Config loading (YAML -> runtime args) ----------
-    yolo_cfg = _load_yaml(yolo_config_path)
     cot_cfg = _load_yaml(cotracker_config_path)
     gdino_cfg = _load_yaml(grounding_dino_config_path)
     xmem_cfg = _load_yaml(xmem_config_path)
 
-    yolo_model = str(yolo_cfg.get("model_path", yolo_model))
-    yolo_conf = float(yolo_cfg.get("conf_threshold", yolo_conf))
-    yolo_iou = float(yolo_cfg.get("iou_threshold", yolo_iou))
-    device = str(yolo_cfg.get("device", device))
+    device = str(gdino_cfg.get("device", device))
 
-    label_aliases_cfg = yolo_cfg.get("label_aliases", {})
-    label_aliases: Dict[str, str] = {}
-    if isinstance(label_aliases_cfg, dict):
-        for k, v in label_aliases_cfg.items():
-            label_aliases[str(k).lower()] = str(v)
-
-    mask_cfg = yolo_cfg.get("mask_refine", {})
+    mask_cfg = gdino_cfg.get("mask_refine", {})
     if not isinstance(mask_cfg, dict):
         mask_cfg = {}
     box_pad_ratio = float(mask_cfg.get("box_pad_ratio", 0.06))
     mask_min_area = int(mask_cfg.get("min_area", 32))
     mask_kernel = int(mask_cfg.get("morph_kernel", 3))
 
-    mask_guard_cfg = yolo_cfg.get("mask_guard", {})
+    mask_guard_cfg = gdino_cfg.get("mask_guard", {})
     if not isinstance(mask_guard_cfg, dict):
         mask_guard_cfg = {}
     max_mask_to_box_ratio = float(mask_guard_cfg.get("default_max_mask_to_box_ratio", 3.2))
@@ -942,15 +938,41 @@ def process_video_for_segmentation(
     oversize_penalty = float(mask_guard_cfg.get("oversize_penalty", 2.8))
     large_stuff_cfg = mask_guard_cfg.get(
         "large_stuff_labels",
-        ["sky", "building", "road", "street", "wall", "mountain", "tree canopy"],
+        [
+            "sky",
+            "skyline horizon",
+            "building",
+            "building facade",
+            "urban building",
+            "road",
+            "road surface",
+            "lane markings",
+            "street",
+            "wall",
+            "mountain",
+            "tree canopy",
+        ],
     )
     if not isinstance(large_stuff_cfg, list):
-        large_stuff_cfg = ["sky", "building", "road", "street", "wall", "mountain", "tree canopy"]
+        large_stuff_cfg = [
+            "sky",
+            "skyline horizon",
+            "building",
+            "building facade",
+            "urban building",
+            "road",
+            "road surface",
+            "lane markings",
+            "street",
+            "wall",
+            "mountain",
+            "tree canopy",
+        ]
     large_stuff_labels = [_normalize_label_token(str(x)) for x in large_stuff_cfg if str(x).strip()]
-    detection_fusion_iom = float(yolo_cfg.get("detection_fusion_iom", yolo_cfg.get("detection_fusion_iou", 0.70)))
+    detection_fusion_iom = float(gdino_cfg.get("detection_fusion_iom", 0.85))
     detection_fusion_iom = float(np.clip(detection_fusion_iom, 0.30, 0.95))
 
-    vehicle_mask_cfg = yolo_cfg.get("vehicle_mask_recovery", {})
+    vehicle_mask_cfg = gdino_cfg.get("vehicle_mask_recovery", {})
     if not isinstance(vehicle_mask_cfg, dict):
         vehicle_mask_cfg = {}
     vehicle_fullmask_labels = vehicle_mask_cfg.get(
@@ -963,7 +985,7 @@ def process_video_for_segmentation(
     vehicle_min_mask_to_box_ratio = float(vehicle_mask_cfg.get("min_mask_to_box_ratio", 0.22))
     vehicle_min_provisional_gain = float(vehicle_mask_cfg.get("min_provisional_gain", 1.20))
 
-    scene_cfg = yolo_cfg.get("scene_fallback", {})
+    scene_cfg = gdino_cfg.get("scene_fallback", {})
     scene_enabled = False
     scene_track = False
     scene_label = "scene"
@@ -973,7 +995,7 @@ def process_video_for_segmentation(
         scene_label = str(scene_cfg.get("label", scene_label))
 
     if target_labels is None:
-        cfg_labels = yolo_cfg.get("target_labels", None)
+        cfg_labels = gdino_cfg.get("target_labels", None)
         if isinstance(cfg_labels, list):
             target_labels = [str(x) for x in cfg_labels]
 
@@ -981,19 +1003,11 @@ def process_video_for_segmentation(
         target_labels = []
 
     target_labels = [
-        _canonicalize_label(str(x), target_labels=None, label_aliases=None)
+        _canonicalize_label(str(x), target_labels=None)
         for x in target_labels
         if str(x).strip()
     ]
     target_labels = list(dict.fromkeys(target_labels))
-
-    if label_aliases:
-        norm_aliases: Dict[str, str] = {}
-        for k, v in label_aliases.items():
-            kk = _canonicalize_label(str(k), target_labels=None, label_aliases=None)
-            vv = _canonicalize_label(str(v), target_labels=None, label_aliases=None)
-            norm_aliases[kk] = vv
-        label_aliases = norm_aliases
 
     gdino_detector = GroundingDinoDetector.from_config(grounding_dino_config_path, gdino_cfg)
     gdino_box_pad_ratio = float(gdino_cfg.get("box_pad_ratio", box_pad_ratio))
@@ -1001,6 +1015,15 @@ def process_video_for_segmentation(
     gdino_runtime_cfg = gdino_cfg.get("runtime", {}) if isinstance(gdino_cfg.get("runtime", {}), dict) else {}
     gdino_preset = str(gdino_runtime_cfg.get("preset", gdino_cfg.get("default_preset", ""))).strip() or None
     gdino_clutter = str(gdino_runtime_cfg.get("clutter_level", gdino_cfg.get("default_clutter", "medium"))).lower()
+    preset_prompts: List[str] = []
+    env_presets = gdino_cfg.get("environment_presets", {}) if isinstance(gdino_cfg.get("environment_presets", {}), dict) else {}
+    if gdino_preset and gdino_preset in env_presets:
+        ent = env_presets.get(gdino_preset, {})
+        if isinstance(ent, dict) and isinstance(ent.get("prompts", None), list):
+            preset_prompts = [str(x) for x in ent.get("prompts", []) if str(x).strip()]
+    if not preset_prompts:
+        fallback_prompts = gdino_cfg.get("prompts", []) if isinstance(gdino_cfg.get("prompts", []), list) else []
+        preset_prompts = [str(x) for x in fallback_prompts if str(x).strip()]
 
     cotracker_checkpoint = str(cot_cfg.get("checkpoint", cotracker_checkpoint))
     tracker_points_per_instance = int(cot_cfg.get("points_per_instance", tracker_points_per_instance))
@@ -1044,9 +1067,12 @@ def process_video_for_segmentation(
     if max_frames_per_chunk is None and not torch.cuda.is_available():
         max_frames_per_chunk = 8
 
-    # COCO-safe default
-    if target_labels is None:
-        target_labels = ["person", "tie", "handbag", "backpack", "umbrella", "suitcase"]
+    if not target_labels:
+        target_labels = [
+            _canonicalize_label(str(x), target_labels=None)
+            for x in preset_prompts
+            if str(x).strip()
+        ]
 
     keyframe_cfg = cot_cfg.get("keyframe", {}) if isinstance(cot_cfg.get("keyframe", {}), dict) else {}
     scene_cut_enable = bool(keyframe_cfg.get("enable_scene_cuts", True))
@@ -1136,10 +1162,6 @@ def process_video_for_segmentation(
         if total_frames == 0:
             raise RuntimeError("No frames extracted from video.")
 
-        label_set = {x.lower() for x in target_labels}
-        if label_aliases:
-            label_set |= set(label_aliases.keys())
-
         instances: Dict[int, Instance] = {}
         track_bank: Dict[int, TrackMemory] = {}
         next_instance_id = 1
@@ -1163,14 +1185,14 @@ def process_video_for_segmentation(
 
         sam2_chunk = _sam2_chunk_size(sam2_model_cfg, device)
         targeted_gdino_prompts = _build_targeted_prompts(
-            gdino_cfg.get("prompts", []),
+            preset_prompts,
             target_labels,
             max_prompts=gdino_prompt_cap,
         )
+        large_stuff_set = {_normalize_label_token(x) for x in large_stuff_labels}
 
         # ---------- Phase A ----------
         cb(0, 1, "Phase A: Loading detectors + SAM2...")
-        detector = YoloV8Detector(model=yolo_model, device=device)
         sam2 = Sam2Masker(model_cfg=sam2_model_cfg, checkpoint_path=sam2_checkpoint, device=device)
 
         cb(0, len(keyframes_sorted), "Phase A: keyframe detect/associate/mask...")
@@ -1178,22 +1200,7 @@ def process_video_for_segmentation(
             frame = frames_bgr[fidx]
             h, w = frame.shape[:2]
 
-            yolo_raw = detector.detect(frame, conf=yolo_conf, iou=yolo_iou, target_labels=label_set)
             detections: List[SimpleDetection] = []
-            for d in yolo_raw:
-                lbl = _canonicalize_label(
-                    str(d.label),
-                    target_labels=target_labels,
-                    label_aliases=label_aliases,
-                )
-                detections.append(
-                    SimpleDetection(
-                        bbox_xyxy=d.bbox_xyxy.astype(np.float32),
-                        label=lbl,
-                        score=float(d.conf),
-                        source="yolo",
-                    )
-                )
 
             if gdino_detector is not None:
                 gdino_raw = gdino_detector.detect(
@@ -1206,7 +1213,6 @@ def process_video_for_segmentation(
                     lbl = _canonicalize_label(
                         str(gd.get("label", "object")),
                         target_labels=target_labels,
-                        label_aliases=label_aliases,
                     )
                     detections.append(
                         SimpleDetection(
@@ -1268,7 +1274,11 @@ def process_video_for_segmentation(
                                 save_npy=save_npy_masks,
                             )
 
-                            if scene_track and scene_instance_id not in instance_seed_points:
+                            if (
+                                scene_track
+                                and scene_instance_id not in instance_seed_points
+                                and not _is_large_stuff_label(scene_label, large_stuff_labels)
+                            ):
                                 pts = CoTrackerPersistentTracker.sample_points_from_mask(
                                     scene_mask.astype(np.uint8),
                                     k=min(16, tracker_points_per_instance),
@@ -1398,7 +1408,7 @@ def process_video_for_segmentation(
                     save_npy=save_npy_masks,
                 )
 
-                if iid not in instance_seed_points:
+                if iid not in instance_seed_points and _normalize_label_token(det.label) not in large_stuff_set:
                     pts = CoTrackerPersistentTracker.sample_points_from_mask(
                         mask.astype(np.uint8),
                         k=tracker_points_per_instance,
@@ -1425,7 +1435,7 @@ def process_video_for_segmentation(
 
             cb(i + 1, len(keyframes_sorted), f"Keyframe {fidx}: {len(frame_assignments)} instances")
 
-        del detector, sam2
+        del sam2
         _clear_gpu()
         cb(1, 1, "Phase A complete")
 
@@ -1455,17 +1465,31 @@ def process_video_for_segmentation(
                 "runtime_device": device,
             }
 
-        # Optional VOS propagation from keyframe masks.
+        trackable_instance_ids = [
+            iid
+            for iid, inst in instances.items()
+            if not _is_large_stuff_label(inst.label, large_stuff_labels)
+        ]
+
+        # Optional VOS propagation from keyframe masks (foreground/trackable only).
         xmem_label_maps: Dict[int, np.ndarray] = {}
-        if xmem_runtime.enabled:
+        if xmem_runtime.enabled and trackable_instance_ids:
             cb(0, 1, "VOS: trying XMem propagation...")
             try:
                 propagator = XMemMaskPropagator(xmem_runtime)
                 if propagator.is_ready():
+                    keyframe_label_maps_trackable: Dict[int, np.ndarray] = {}
+                    for kf_idx, lbl_map in keyframe_label_maps.items():
+                        filtered = np.zeros_like(lbl_map, dtype=np.int32)
+                        for iid in trackable_instance_ids:
+                            filtered[lbl_map == int(iid)] = int(iid)
+                        if np.any(filtered > 0):
+                            keyframe_label_maps_trackable[kf_idx] = filtered
+
                     xmem_label_maps = propagator.propagate(
                         frames_bgr=frames_bgr,
-                        keyframe_label_maps=keyframe_label_maps,
-                        all_instance_ids=sorted(instances.keys()),
+                        keyframe_label_maps=keyframe_label_maps_trackable,
+                        all_instance_ids=sorted(trackable_instance_ids),
                     )
                     cb(1, 1, f"VOS: XMem propagated {len(xmem_label_maps)} frames")
                 else:
@@ -1505,7 +1529,7 @@ def process_video_for_segmentation(
         # Use VOS output to improve tracked boxes and occlusion recovery memory.
         if xmem_label_maps:
             for t, lbl_map in xmem_label_maps.items():
-                for iid in instances.keys():
+                for iid in trackable_instance_ids:
                     m = (lbl_map == int(iid)).astype(np.uint8)
                     mb = _mask_bbox(m)
                     if mb is None:
@@ -1515,9 +1539,6 @@ def process_video_for_segmentation(
         # ---------- Phase C ----------
         cb(0, 1, "Phase C: Loading SAM2...")
         sam2_final = Sam2Masker(model_cfg=sam2_model_cfg, checkpoint_path=sam2_checkpoint, device=device)
-        detector_recovery = None
-        if recovery_cfg.enable_selective_redetect:
-            detector_recovery = YoloV8Detector(model=yolo_model, device=device)
 
         recent_masks: Dict[int, np.ndarray] = {}
         last_redetect_frame = -10_000
@@ -1530,7 +1551,7 @@ def process_video_for_segmentation(
             # 1) Consume XMem propagated masks first (fast and temporally stable).
             if t in xmem_label_maps:
                 lbl_map = xmem_label_maps[t]
-                for iid in instances.keys():
+                for iid in trackable_instance_ids:
                     if t in instances[iid].mask_paths:
                         continue
                     m = (lbl_map == int(iid)).astype(np.uint8)
@@ -1557,7 +1578,7 @@ def process_video_for_segmentation(
             frame_boxes: List[List[float]] = []
             active_boxes_for_overlap: List[np.ndarray] = []
 
-            for iid in instances.keys():
+            for iid in trackable_instance_ids:
                 if t in instances[iid].mask_paths:
                     continue
                 b = tracked_bboxes.get(iid, {}).get(t, None)
@@ -1568,13 +1589,13 @@ def process_video_for_segmentation(
                 active_boxes_for_overlap.append(np.asarray(b, dtype=np.float32))
 
             missing_count = 0
-            for iid in instances.keys():
+            for iid in trackable_instance_ids:
                 if t in instances[iid].mask_paths:
                     continue
                 if t not in tracked_bboxes.get(iid, {}):
                     missing_count += 1
-            unresolved = max(1, sum(1 for iid in instances.keys() if t not in instances[iid].mask_paths))
-            missing_ratio = float(missing_count) / float(unresolved)
+            unresolved = sum(1 for iid in trackable_instance_ids if t not in instances[iid].mask_paths)
+            missing_ratio = float(missing_count) / float(max(1, unresolved))
             overlap_score = _occlusion_overlap_score(active_boxes_for_overlap)
 
             needs_redetect = (
@@ -1589,23 +1610,7 @@ def process_video_for_segmentation(
 
             # 2) Selective re-segmentation only when confidence drops / occlusions surge.
             if needs_redetect:
-                redetects = detector_recovery.detect(frame, conf=yolo_conf, iou=yolo_iou, target_labels=label_set)
                 redet_list: List[SimpleDetection] = []
-                for d in redetects:
-                    lbl = _canonicalize_label(
-                        str(d.label),
-                        target_labels=target_labels,
-                        label_aliases=label_aliases,
-                    )
-                    redet_list.append(
-                        SimpleDetection(
-                            bbox_xyxy=d.bbox_xyxy.astype(np.float32),
-                            label=lbl,
-                            score=float(d.conf),
-                            source="yolo",
-                        )
-                    )
-
                 if gdino_detector is not None:
                     graw = gdino_detector.detect(
                         frame_paths[t],
@@ -1617,8 +1622,9 @@ def process_video_for_segmentation(
                         lbl = _canonicalize_label(
                             str(gd.get("label", "object")),
                             target_labels=target_labels,
-                            label_aliases=label_aliases,
                         )
+                        if _is_large_stuff_label(lbl, large_stuff_labels):
+                            continue
                         redet_list.append(
                             SimpleDetection(
                                 bbox_xyxy=np.asarray(gd["bbox_xyxy"], dtype=np.float32),
@@ -1738,7 +1744,7 @@ def process_video_for_segmentation(
                 # recompute unresolved tracked boxes after selective re-detect writes.
                 frame_iids = []
                 frame_boxes = []
-                for iid in instances.keys():
+                for iid in trackable_instance_ids:
                     if t in instances[iid].mask_paths:
                         continue
                     b = tracked_bboxes.get(iid, {}).get(t, None)
@@ -1838,11 +1844,9 @@ def process_video_for_segmentation(
             cb(
                 t + 1,
                 total_frames,
-                f"Frame {t}: unresolved={sum(1 for iid in instances if t not in instances[iid].mask_paths)}",
+                f"Frame {t}: unresolved={sum(1 for iid in trackable_instance_ids if t not in instances[iid].mask_paths)}",
             )
 
-        if detector_recovery is not None:
-            del detector_recovery
         del sam2_final
         _clear_gpu()
         cb(1, 1, "Phase C complete")

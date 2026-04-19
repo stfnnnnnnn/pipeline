@@ -7,10 +7,10 @@ script_path: "scripts/gdino_worker.py"
 model_config: "configs/perception/grounding_dino/GroundingDINO_SwinB.cfg.py"
 model_weights: "models/checkpoints/grounding_dino/groundingdino_swinb_cogcoor.pth"
 device: "cuda"
-box_threshold: 0.30
-text_threshold: 0.24
-max_detections: 80
-max_prompts: 10
+box_threshold: 0.16
+text_threshold: 0.15
+max_detections: 180
+max_prompts: 15
 box_pad_ratio: 0.10
 mask_selection: "score"
 area_weight: 0.10
@@ -31,25 +31,23 @@ runtime:
 environment_presets:
   urban_street:
     box_threshold:
-      low: 0.24
-      medium: 0.30
-      high: 0.34
+      low: 0.12
+      medium: 0.16
+      high: 0.20
     text_threshold:
-      low: 0.20
-      medium: 0.24
-      high: 0.28
+      low: 0.10
+      medium: 0.15
+      high: 0.18
     prompts:
-      - "road surface"
-      - "lane markings"
+      - "person"
+      - "handbag"
+      - "car"
+      - "bus"
       - "building facade"
-      - "urban building"
-      - "street tree"
-      - "tree canopy"
-      - "sidewalk curb"
-      - "parked vehicle"
-      - "traffic light pole"
-      - "street sign"
-      - "pedestrian crossing"
+      - "road surface"
+      - "sidewalk"
+      - "tree"
+      - "traffic light"
       - "skyline horizon"
   indoor_room:
     box_threshold:
@@ -86,15 +84,30 @@ environment_presets:
       - "mountain ridge"
 
 prompts:
-  - "road surface"
+  - "person"
+  - "handbag"
+  - "car"
+  - "bus"
+  - "truck"
   - "building facade"
-  - "street tree"
-  - "tree canopy"
-  - "sidewalk curb"
-  - "parked vehicle"
+  - "road surface"
+  - "sidewalk"
+  - "tree"
+  - "street sign"
   - "skyline horizon"
 
 # DLL dirs required on Windows before importing groundingdino._C
 # Update these if your paths differ.
 torch_lib_dir: "C:\\Users\\LENOVO\\miniconda3\\envs\\gdino310\\Lib\\site-packages\\torch\\lib"
 cuda_bin_dir: "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.4\\bin"
+
+mask_guard:
+  default_max_mask_to_box_ratio: 3.2
+  global_max_area_ratio: 0.82
+  oversize_penalty: 2.8
+  large_stuff_labels:
+    - "skyline horizon"
+    - "building facade"
+    - "road surface"
+    - "sidewalk"
+    - "tree"

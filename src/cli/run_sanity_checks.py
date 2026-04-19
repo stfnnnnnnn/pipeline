@@ -32,7 +32,6 @@ print("\n--- Checking Core Libraries ---")
 check_module('diffusers')
 check_module('transformers')
 check_module('xformers')
-check_module('ultralytics', 'YOLO (Ultralytics)')
 check_module('cv2', 'OpenCV')
 
 # 3. Check Custom Meta Repositories

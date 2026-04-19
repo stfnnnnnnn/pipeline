@@ -10,6 +10,12 @@ import os
 from typing import List
 
 import numpy as np
+import torch
+
+try:
+	import torchvision.ops as ops
+except Exception:
+	ops = None
 
 
 def _add_dll_dirs(torch_lib_dir: str | None, cuda_bin_dir: str | None) -> None:
@@ -99,6 +105,23 @@ def main() -> None:
 	h, w = image_source.shape[:2]
 	boxes = _normalize_boxes(np.array(boxes, dtype=np.float32), w, h)
 	boxes = _clip_boxes(boxes, w, h)
+
+	scores = np.array(logits, dtype=np.float32)
+	if scores.ndim > 1:
+		scores = np.max(scores, axis=tuple(range(1, scores.ndim)))
+	scores = scores.reshape(-1)
+	if scores.shape[0] != boxes.shape[0]:
+		scores = np.ones((boxes.shape[0],), dtype=np.float32)
+
+	if ops is not None and boxes.shape[0] > 0:
+		boxes_tensor = torch.as_tensor(boxes, dtype=torch.float32)
+		scores_tensor = torch.as_tensor(scores, dtype=torch.float32)
+		keep_idx = ops.nms(boxes_tensor, scores_tensor, iou_threshold=0.45).cpu().numpy().astype(np.int64)
+		boxes = boxes[keep_idx]
+		scores = scores[keep_idx]
+		phrases = [phrases[int(i)] for i in keep_idx if int(i) < len(phrases)]
+
+	logits = scores
 
 	results: List[dict] = []
 	for box, score, phrase in zip(boxes, logits, phrases):

@@ -2,13 +2,13 @@
 
 This repository contains a Streamlit app and a multi-stage perception pipeline:
 
-1. Phase A (Keyframes): YOLO26s + SAM2 masks
+1. Phase A (Keyframes): GroundingDINO + SAM2 masks
 2. Phase B: CoTracker point tracking
 3. Phase C: SAM2 masks on all frames
-4. Optional: GroundingDINO for scene labels (buildings/trees/road/sky)
+4. Optional: XMem propagation for temporal consistency
 
 Two conda environments are required:
-- `vidcolor` for the main app (YOLO/SAM2/CoTracker)
+- `vidcolor` for the main app (SAM2/CoTracker)
 - `gdino310` for GroundingDINO (separate env for Windows DLL stability)
 
 ## 1) Create the environments
@@ -63,7 +63,6 @@ python -c "import groundingdino._C as C; print('groundingdino _C ok')"
 
 Place checkpoints in the following paths:
 
-- YOLO26s: models/checkpoints/yolo/yolo26s.pt
 - SAM2 Hiera-L: models/checkpoints/sam2/sam2_hiera_large.pt
 - CoTracker3: models/checkpoints/cotracker/cotracker3.pth
 - GroundingDINO SwinB: models/checkpoints/grounding_dino/groundingdino_swinb_cogcoor.pth
@@ -95,8 +94,6 @@ streamlit run app.py
 
 ## 5) Key configs to tune
 
-- YOLO labels and masking:
-	- configs/perception/yolo26_s.yaml
 - CoTracker settings:
 	- configs/perception/cotracker3.yaml
 - GroundingDINO prompts and thresholds:

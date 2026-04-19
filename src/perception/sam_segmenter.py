@@ -89,6 +89,7 @@ class Sam2Masker:
                 oversize_penalty=oversize_penalty,
             )
 
+        # Keep failed masks empty; never substitute detector boxes as pseudo-masks.
         return (masks > 0).astype(bool)
 
     def appearance_embeddings_from_masks(
