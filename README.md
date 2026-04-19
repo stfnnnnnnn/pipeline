@@ -1,5 +1,15 @@
 # MoodPlay Video Colorizer
 
+# NOTE: Must install the following prior to installation of python libraries abd setup of pipeline
+1. Visual Studio Code
+2. Python 3.10.9
+3. Python 3.11.9
+4. Miniconda
+5. Git
+6. Visual Studio Build Tools 2022
+7. NVIDIA Cuda Toolkit version 12.1 or 12.8
+
+
 This repository contains a Streamlit app and a multi-stage perception pipeline:
 
 1. Phase A (Keyframes): GroundingDINO + SAM2 masks
