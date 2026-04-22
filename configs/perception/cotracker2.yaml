@@ -1,0 +1,28 @@
+# CoTracker2 Tracking Configuration
+checkpoint: "models/checkpoints/cotracker/cotracker2.pth"
+device: "cuda"
+points_per_instance: 48
+keyframe_stride: 6
+max_frames_per_chunk: 16
+max_total_frames: null
+
+keyframe:
+  enable_scene_cuts: true
+  scene_cut_threshold: 0.44
+  scene_cut_min_gap: 4
+
+association:
+  weight_iou: 0.45
+  weight_app: 0.35
+  weight_motion: 0.20
+  min_iou_gate: 0.05
+  min_app_gate: 0.10
+  max_cost: 0.94
+  max_missed_keyframes: 10
+  embedding_dim: 64
+
+recovery:
+  enable_selective_redetect: true
+  missing_ratio_trigger: 0.45
+  overlap_trigger: 0.38
+  min_redetect_gap: 10

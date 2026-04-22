@@ -1,0 +1,254 @@
+/* Background */
+
+* {
+    margin: 0;
+    padding: 0;
+}
+.stApp {
+    background: linear-gradient(-45deg, #a6d8ff, #ffcde1, #c2e9fb, #f9c5d1);
+    background-size: 300% 300%;
+    animation: gradientFlow 12s ease infinite;
+}
+
+@keyframes gradientFlow {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+h1 {
+    font-weight: 700 !important;
+    color: #333 !important;
+    margin-bottom: 0px !important;
+}
+
+.mood-text {
+    color: #f2a7c0;
+    animation: softPinkGlow 3s ease-in-out infinite;
+}
+
+.play-text {
+    color: #74bcd9;
+    animation: softBlueGlow 3s ease-in-out infinite;
+}
+
+@keyframes softPinkGlow {
+    0%, 100% { text-shadow: 0 0 10px rgba(242, 167, 192, 0.2); }
+    50% { text-shadow: 0 0 20px rgba(242, 167, 192, 0.6); }
+}
+
+@keyframes softBlueGlow {
+    0%, 100% { text-shadow: 0 0 10px rgba(116, 188, 217, 0.2); }
+    50% { text-shadow: 0 0 20px rgba(116, 188, 217, 0.6); }
+}
+
+p {
+    color: #555 !important;
+    font-size: 1.1rem !important;
+}
+
+video {
+    border-radius: 10px !important;
+}
+
+/* Button styles */
+div.st-key-landing_btn,
+div.st-key-proceed_btn {
+    display: flex;
+    justify-content: center;
+}
+
+div.st-key-landing_btn button,
+div.st-key-proceed_btn button,
+div.st-key-btn_skip button,
+div.st-key-btn_back button,
+div.st-key-btn_home button {
+    background: rgba(255, 255, 255, 0.25) !important; 
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+    border-radius: 10px !important;
+
+    font-weight: 600 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+div.st-key-landing_btn button:hover,
+div.st-key-proceed_btn button:hover,
+div.st-key-btn_skip button:hover,
+div.st-key-btn_back button:hover,
+div.st-key-btn_home button:hover {
+    background-color: rgba(255, 255, 255, 0.4) !important;
+    color: #ffffff !important;
+    border-color: #ffffff !important;
+    transform: scale(1.05);
+}
+
+/* Remove default header decoration */
+header[data-testid="stHeader"] {
+    background: transparent !important;
+}
+div[data-testid="stDecoration"] {
+    display: none;
+}
+
+
+
+/* Upload div */
+section[data-testid="stFileUploaderDropzone"] {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    border: 1px solid rgba(255, 255, 255, 0.6) !important;
+    border-radius: 15px !important;
+}
+
+section[data-testid="stFileUploaderDropzone"]:hover {
+    background-color: rgba(255, 255, 255, 0.4) !important;
+    border-color: #ffffff !important;
+}
+
+section[data-testid="stFileUploaderDropzone"] div,
+section[data-testid="stFileUploaderDropzone"] span, 
+section[data-testid="stFileUploaderDropzone"] small {
+    color: #444 !important;
+}
+
+/* "Browse files" button inside the upload div */
+section[data-testid="stFileUploaderDropzone"] button {
+    background: rgba(255, 255, 255, 0.4) !important; 
+    border: 1px rgba(255, 255, 255, 0.6) !important;
+    color: #333 !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease;
+}
+
+section[data-testid="stFileUploaderDropzone"] button:hover {
+    background: rgba(255, 255, 255, 0.7) !important;
+    transform: scale(1.01);
+}
+
+
+/* Uploaded video filename preview */
+div[data-testid="stFileUploaderFileName"] {
+    color: #333 !important;
+    font-weight: 500;
+}
+
+div[data-testid="stFileUploaderFile"] small {
+    color: #3f3f3f !important;
+}
+
+div[data-testid="stFileUploaderFile"] svg {
+    fill: #333333 !important; 
+    color: #333333 !important;
+}
+
+div[data-testid="stFileUploaderDeleteBtn"] svg:hover {
+    background-color: rgba(0,0,0,0.1) !important; /* Slight grey background on hover */
+    border-radius: 25px
+}
+
+
+
+/* Object detection page */
+.obj-header {
+    color: #f2a7c0 !important; 
+    font-weight: 700 !important;
+    font-size: 2.5rem !important;
+    margin-bottom: 0 !important;
+}
+.obj-sub {
+    color: #444 !important;
+    font-size: 1rem !important;
+}
+
+/* Navigation buttons */
+div.st-key-btn_prev button, 
+div.st-key-btn_next button {
+    background-color: rgba(166, 216, 255, 0.6) !important; /* Pastel Blue */
+    color: #333 !important;
+    border: 1px solid #7fcdec !important;
+    border-radius: 10px !important;
+    transition: transform 0.1s ease;
+}
+div.st-key-btn_prev button:hover, 
+div.st-key-btn_next button:hover {
+    background-color: rgb(127, 205, 236, 0.6) !important;
+    transform: scale(1.02);
+}
+
+/* Section Headers */
+h3 {
+    color: #8da9c4 !important; /* Soft Blue-Grey for headers */
+    font-weight: 700 !important;
+}
+div[data-testid="column"]:nth-of-type(2) h3 {
+    color: #f2a7c0 !important; /* Pink header for the right side */
+}
+
+
+
+/* Object colorization page */
+div.st-key-btn_finish button,
+div.st-key-btn_confirm button,
+div.st-key-btn_download button {
+    background-color: #f2a7c0 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 10px !important;
+    box-shadow: 0 4px 10px rgba(242, 167, 192, 0.4);
+    transition: all 0.2s ease;
+}
+div.st-key-btn_finish button:hover,
+div.st-key-btn_confirm button:hover,
+div.st-key-btn_download button:hover {
+    background-color: #e681a2 !important;
+    transform: scale(1.05);
+}
+
+
+/* Style buttons with key starting with "btn_style_" */
+div[class*="st-key-btn_style_"] button {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+    border-radius: 12px !important;
+    min-height: 100px !important;
+    padding: 20px 15px !important;
+    backdrop-filter: blur(8px) !important;
+    transition: all 0.2s ease !important;
+    text-align: center !important;
+}
+
+div[class*="st-key-btn_style_"] button:hover {
+    background-color: rgba(255, 255, 255, 0.3) !important;
+    border-color: rgba(255, 255, 255, 0.8) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    transform: translateY(-2px) !important;
+}
+
+/* Selected state (primary button) */
+div[class*="st-key-btn_style_"] button[kind="primary"] {
+    border-color: #74bcd9 !important;
+    background-color: rgba(116, 188, 217, 0.25) !important;
+    box-shadow: 0 4px 12px rgba(116, 188, 217, 0.4) !important;
+}
+
+/* Color circles container */
+.mood-colors-container {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: -5px;
+    margin-bottom: 15px;
+}
+
+.color-circle {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    display: inline-block;
+}
+
+
