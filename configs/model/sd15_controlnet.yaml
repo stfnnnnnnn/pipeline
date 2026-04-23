@@ -1,0 +1,23 @@
+model:
+  base_inpaint_model: "runwayml/stable-diffusion-inpainting"
+  controlnet_model: "lllyasviel/sd-controlnet-canny"
+  device: "cuda"
+  torch_dtype: "fp16"
+
+inference:
+  num_inference_steps: 20
+  guidance_scale: 7.5
+  strength: 0.70
+  canny_low: 100
+  canny_high: 200
+
+paths:
+  frames_dir: "data/extracted_frames"
+  masks_root: "data/intermediate/masks"
+  metadata_json: "data/intermediate/metadata/segmentation_tracking_metadata.json"
+  object_color_prompts_json: "data/annotations/object_color_prompts.json"
+  output_dir: "data/output_colorized"
+
+runtime:
+  save_debug_control: true
+  merge_instances_mode: "sequential"  # sequential | union

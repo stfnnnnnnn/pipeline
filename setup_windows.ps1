@@ -307,6 +307,12 @@ Install-TorchWithCudaFallback -EnvName "vidcolor"
 Write-Host "Installing vidcolor requirements"
 Invoke-Conda -Args @("run", "-n", "vidcolor", "python", "-m", "pip", "install", "-r", "requirements.txt")
 
+Write-Host "Prefetching SD1.5 inpainting + ControlNet model assets in vidcolor"
+Invoke-Conda -Args @(
+    "run", "-n", "vidcolor", "python", "scripts/prefetch_sd15_inpaint_assets.py",
+    "--config", "configs/model/sd15_controlnet.yaml"
+)
+
 Write-Host "Installing YOLO compatibility packages in vidcolor (retained intentionally)"
 Invoke-Conda -Args @("run", "-n", "vidcolor", "python", "-m", "pip", "install", "-U", "ultralytics")
 

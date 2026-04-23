@@ -44,7 +44,7 @@ Two conda environments are required:
 powershell -ExecutionPolicy Bypass -File .\setup_windows.ps1
 ```
 
-`setup_windows.ps1` is the primary installer for this repository. It creates/updates `vidcolor` and `gdino310`, installs GroundingDINO, installs XMem dependencies in `vidcolor`, and keeps YOLO compatibility installation.
+`setup_windows.ps1` is the primary installer for this repository. It creates/updates `vidcolor` and `gdino310`, installs GroundingDINO, installs XMem dependencies in `vidcolor`, prefetches SD1.5 inpainting + ControlNet model assets, and keeps YOLO compatibility installation.
 
 Optional wrapper script is also available:
 
@@ -63,6 +63,9 @@ python -m pip install torch torchvision torchaudio --index-url https://download.
 # Install remaining deps
 python -m pip install -r requirements.txt
 
+# Streamlit launcher (already included in requirements)
+python -m pip install -U streamlit
+
 # Install XMem runtime dependencies
 python -m pip install -r XMem/requirements.txt
 
@@ -79,6 +82,9 @@ python -m pip install -U ultralytics
 Verify CUDA:
 ```powershell
 python -c "import torch; print(torch.__version__, torch.version.cuda, torch.cuda.is_available())"
+
+# Optional: prefetch SD1.5 inpainting + ControlNet assets so first inference is instant
+python scripts/prefetch_sd15_inpaint_assets.py --config configs/model/sd15_controlnet.yaml
 ```
 
 ### B. GroundingDINO env (gdino310)
