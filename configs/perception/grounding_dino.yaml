@@ -2,7 +2,8 @@
 # Runs via scripts/gdino_worker.py in a separate conda env.
 enabled: true
 env_name: "gdino310"
-conda_exe: "C:\\Users\\LENOVO\\miniconda3\\condabin\\conda.bat"
+# Optional explicit path. Leave null to auto-detect via CONDA_EXE/PATH/common install dirs.
+conda_exe: null
 script_path: "scripts/gdino_worker.py"
 model_config: "configs/perception/grounding_dino/GroundingDINO_SwinB.cfg.py"
 model_weights: "models/checkpoints/grounding_dino/groundingdino_swinb_cogcoor.pth"

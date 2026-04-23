@@ -1,4 +1,18 @@
 {
     "python-envs.defaultEnvManager": "ms-python.python:conda",
-    "python-envs.defaultPackageManager": "ms-python.python:conda"
+    "python-envs.defaultPackageManager": "ms-python.python:conda",
+    "terminal.integrated.profiles.windows": {
+        "Conda (base)": {
+            "path": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-NoExit",
+                "-Command",
+                "& 'C:\\ProgramData\\miniconda3\\shell\\condabin\\conda-hook.ps1'; conda activate base"
+            ],
+            "icon": "terminal-powershell"
+        }
+    },
+    "terminal.integrated.defaultProfile.windows": "Conda (base)"
 }

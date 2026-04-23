@@ -84,10 +84,10 @@ function Ensure-Env {
 
     if ($envExists) {
         Write-Host "Updating conda env: $EnvName"
-        Invoke-Conda -Args @("env", "update", "--name", $EnvName, "--file", $EnvFile, "--prune")
+        Invoke-Conda -Args @("env", "update", "--name", $EnvName, "--file", $EnvFile, "--environment-spec", "environment.yml", "--prune")
     } else {
         Write-Host "Creating conda env: $EnvName"
-        Invoke-Conda -Args @("env", "create", "--name", $EnvName, "--file", $EnvFile)
+        Invoke-Conda -Args @("env", "create", "--name", $EnvName, "--file", $EnvFile, "--environment-spec", "environment.yml")
     }
 }
 

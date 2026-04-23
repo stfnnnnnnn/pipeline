@@ -1,0 +1,18 @@
+base_model: "runwayml/stable-diffusion-v1-5"
+output_root: "models/loras"
+dataset_root: "data/lora_training"
+
+# per run
+mood_name: "neo_tokyo"
+
+resolution: 512
+train_batch_size: 1
+gradient_accumulation_steps: 4
+learning_rate: 1.0e-4
+max_train_steps: 1000
+rank: 16
+seed: 42
+
+mixed_precision: "fp16"
+use_8bit_adam: true
+gradient_checkpointing: true

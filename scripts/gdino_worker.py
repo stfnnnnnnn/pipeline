@@ -21,9 +21,9 @@ except Exception:
 def _add_dll_dirs(torch_lib_dir: str | None, cuda_bin_dir: str | None) -> None:
 	if not hasattr(os, "add_dll_directory"):
 		return
-	if torch_lib_dir:
+	if torch_lib_dir and os.path.isdir(torch_lib_dir):
 		os.add_dll_directory(torch_lib_dir)
-	if cuda_bin_dir:
+	if cuda_bin_dir and os.path.isdir(cuda_bin_dir):
 		os.add_dll_directory(cuda_bin_dir)
 
 

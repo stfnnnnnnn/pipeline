@@ -1,8 +1,8 @@
 name: vidcolor
 channels:
-	- conda-forge
+  - conda-forge
 dependencies:
-	- python=3.10
-	- pip=24.0
-	- pip:
-			- -r requirements.txt
+  - python=3.10
+  - pip=24.0
+  - pip:
+      - -r requirements.txt
