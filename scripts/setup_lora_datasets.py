@@ -12,9 +12,9 @@ MOOD_TEMPLATES = {
         "trigger": "mdply_neo_tokyo",
         "caption": "a city street scene, cyberpunk, neon lights, rainy",
     },
-    "pastel_filmic": {
-        "trigger": "mdply_pastel_filmic",
-        "caption": "a city street scene, pastel cinematic palette, low contrast",
+    "sunday_blues": {
+        "trigger": "mdply_sunday_blues",
+        "caption": "a city street scene, moody blue cinematic palette, low contrast",
     },
     "neutral_realistic": {
         "trigger": "mdply_neutral_real",

@@ -28,7 +28,7 @@ def main():
             run(["python", "scripts/validate_lora_dataset.py"])
 
         elif choice == "3":
-            mood = input("Mood (neo_tokyo/warm_sunny/pastel_filmic/neutral_realistic): ").strip()
+            mood = input("Mood (neo_tokyo/warm_sunny/sunday_blues/neutral_realistic): ").strip()
             train_script = input("Path to train_text_to_image_lora.py: ").strip()
             cmd = ["python", "scripts/train_lora_mood.py", "--mood", mood]
             if train_script:

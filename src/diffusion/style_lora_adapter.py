@@ -18,9 +18,9 @@ class MoodStyleManager:
                 "trigger": "mdply_neo_tokyo",
                 "path": "models/loras/neo_tokyo/pytorch_lora_weights.safetensors",
             },
-            "Pastel Filmic": {
-                "trigger": "mdply_pastel_filmic",
-                "path": "models/loras/pastel_filmic/pytorch_lora_weights.safetensors",
+            "Sunday Blues": {
+                "trigger": "mdply_sunday_blues",
+                "path": "models/loras/sunday_blues/pytorch_lora_weights.safetensors",
             },
             "Neutral Realistic": {
                 "trigger": "mdply_neutral_real",

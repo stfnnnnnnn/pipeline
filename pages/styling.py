@@ -28,7 +28,7 @@ with col_right:
         {"name": "Nostalgic", "icon": "🎞️", "desc": "Sepia tones & grain", "colors": ["#F4E4C1", "#D9C3A6", "#A68A64", "#735D48", "#8C7B70"]},
         {"name": "Neon City", "icon": "🌃", "desc": "Cyberpunk aesthetic", "colors": ["#FF0099", "#00F3FF", "#9D00FF", "#CCFF00", "#050510"]},
         {"name":"Neutral Realistic","icon":"🌧️","desc":"Desaturated blue","colors":["#B7C7D9","#8FA3B5","#6E8397","#4C6276","#2E3E4F"]},
-        {"name":"Pastel Filmic","icon":"📺","desc":"1950s Technicolor","colors":["#E85C5C","#2FAE8A","#4A74D6","#F0C66B","#F5E6D3"]}
+        {"name":"Sunday Blues","icon":"📺","desc":"1950s Technicolor","colors":["#E85C5C","#2FAE8A","#4A74D6","#F0C66B","#F5E6D3"]}
 
     ]
     
