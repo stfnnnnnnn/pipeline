@@ -2,3 +2,9 @@ models/checkpoints/sd1.5/*.ckpt
 models/checkpoints/
 *.ckpt
 *.pth
+models/controlnet/
+models/grounding_dino/
+models/sam2/
+models/stable_diffusion/
+models/xmem/
+models/yolo/

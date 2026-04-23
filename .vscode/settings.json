@@ -14,5 +14,12 @@
             "icon": "terminal-powershell"
         }
     },
-    "terminal.integrated.defaultProfile.windows": "Conda (base)"
+    "terminal.integrated.defaultProfile.windows": "Conda (base)",
+    "python-envs.pythonProjects": [
+        {
+            "path": ".",
+            "envManager": "ms-python.python:conda",
+            "packageManager": "ms-python.python:conda"
+        }
+    ]
 }

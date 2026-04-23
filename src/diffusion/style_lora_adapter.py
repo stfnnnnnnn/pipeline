@@ -10,21 +10,17 @@ class MoodStyleManager:
         self.current_mood: Optional[str] = None
         self.lora_scale: float = 0.65
         self.mood_registry: Dict[str, Dict[str, str]] = {
-            "Warm Sunny Day": {
-                "trigger": "mdply_warm_sunny",
-                "path": "models/loras/warm_sunny/pytorch_lora_weights.safetensors",
-            },
             "Neo Tokyo Neon": {
                 "trigger": "mdply_neo_tokyo",
                 "path": "models/loras/neo_tokyo/pytorch_lora_weights.safetensors",
             },
-            "Sunday Blues": {
-                "trigger": "mdply_sunday_blues",
-                "path": "models/loras/sunday_blues/pytorch_lora_weights.safetensors",
-            },
             "Neutral Realistic": {
                 "trigger": "mdply_neutral_real",
                 "path": "models/loras/neutral_realistic/pytorch_lora_weights.safetensors",
+            },
+            "Warm Sunny Day": {
+                "trigger": "mdply_warm_sunny",
+                "path": "models/loras/warm_sunny/pytorch_lora_weights.safetensors",
             },
         }
 

@@ -28,6 +28,9 @@ except ImportError:
     SAM2ImagePredictor = None
 
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
 class Sam2Masker:
     def __init__(self, model_cfg: str, checkpoint_path: str, device: str = "cuda") -> None:
         if build_sam2 is None or SAM2ImagePredictor is None:
@@ -340,15 +343,71 @@ class Sam2Masker:
     def _build_model(model_cfg: str, checkpoint_path: str, device: str):
         if build_sam2 is None:
             raise ImportError("SAM2 builder is unavailable")
+
+        resolved_ckpt = Sam2Masker._resolve_existing_path(
+            checkpoint_path,
+            must_exist=True,
+            label="checkpoint",
+        )
+        resolved_cfg = Sam2Masker._resolve_existing_path(
+            model_cfg,
+            must_exist=False,
+            label="config",
+        )
+        cfg_arg = str(resolved_cfg) if resolved_cfg is not None else str(model_cfg)
+
         try:
-            return build_sam2(model_cfg, checkpoint_path, device=device)
+            return build_sam2(cfg_arg, str(resolved_ckpt), device=device)
         except Exception as exc:
-            cfg_path = Path(model_cfg)
+            cfg_path = Path(cfg_arg)
             if Sam2Masker._is_missing_config(exc) and cfg_path.exists():
-                return build_sam2(f"configs/sam2/{cfg_path.name}", checkpoint_path, device=device)
+                return build_sam2(f"configs/sam2/{cfg_path.name}", str(resolved_ckpt), device=device)
             if Sam2Masker._is_config_attr_error(exc) and cfg_path.exists():
-                return build_sam2(f"configs/sam2/{cfg_path.name}", checkpoint_path, device=device)
+                return build_sam2(f"configs/sam2/{cfg_path.name}", str(resolved_ckpt), device=device)
             raise
+
+    @staticmethod
+    def _resolve_existing_path(path_value: str, *, must_exist: bool, label: str) -> Optional[Path]:
+        raw = str(path_value).strip()
+        if not raw:
+            if must_exist:
+                raise FileNotFoundError(f"SAM2 {label} path is empty")
+            return None
+
+        p = Path(raw).expanduser()
+        candidates: List[Path] = []
+
+        if p.is_absolute():
+            candidates.append(p)
+        else:
+            cwd = Path.cwd()
+            candidates.extend([
+                cwd / p,
+                PROJECT_ROOT / p,
+                PROJECT_ROOT.parent / p,
+                Path.home() / "Desktop" / p,
+            ])
+
+        seen = set()
+        ordered: List[Path] = []
+        for cand in candidates:
+            key = str(cand).lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            ordered.append(cand)
+
+        for cand in ordered:
+            if cand.exists():
+                return cand.resolve()
+
+        if must_exist:
+            attempted = "\n".join(f"- {str(c)}" for c in ordered)
+            raise FileNotFoundError(
+                f"SAM2 {label} not found: {path_value}\n"
+                f"Attempted locations:\n{attempted}"
+            )
+        return None
 
     @staticmethod
     def _is_missing_config(exc: Exception) -> bool:

@@ -1,0 +1,14 @@
+{
+  "model": "runwayml/stable-diffusion-v1-5",
+  "train_data_dir": "C:\\Users\\Administrator\\Documents\\pipeline\\data\\lora_training\\neo_tokyo",
+  "output_dir": "C:\\Users\\Administrator\\Documents\\pipeline\\models\\loras\\neo_tokyo",
+  "resolution": 512,
+  "train_batch_size": 1,
+  "gradient_accumulation_steps": 4,
+  "learning_rate": 0.0001,
+  "max_train_steps": 1000,
+  "rank": 16,
+  "seed": 42,
+  "mixed_precision": "fp16",
+  "optimizer": "AdamW"
+}

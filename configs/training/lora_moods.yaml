@@ -16,3 +16,8 @@ seed: 42
 mixed_precision: "fp16"
 use_8bit_adam: true
 gradient_checkpointing: true
+dataloader_num_workers: 2
+lr_warmup_steps: 0
+checkpointing_steps: 200
+center_crop: true
+random_flip: false

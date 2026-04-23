@@ -28,29 +28,59 @@ def _load_yaml(path: str) -> Dict:
 
 
 def _resolve_repo_path(path_value: str, *, label: str, must_exist: bool) -> str:
-    p = Path(str(path_value).strip()).expanduser()
-    if not p.is_absolute():
-        p = (PROJECT_ROOT / p).resolve()
-    else:
-        p = p.resolve()
-
-    if must_exist and not p.exists():
-        raise RuntimeError(f"GroundingDINO {label} not found: {p}")
-
-    return str(p)
+    resolved = _resolve_path_candidates(path_value, must_exist=must_exist, label=label)
+    return str(resolved)
 
 
 def _resolve_optional_dir(path_value: Optional[str]) -> Optional[str]:
     if not path_value:
         return None
-    p = Path(str(path_value).strip()).expanduser()
-    if not p.is_absolute():
-        p = (PROJECT_ROOT / p).resolve()
-    else:
-        p = p.resolve()
+    p = _resolve_path_candidates(path_value, must_exist=False, label="directory")
     if p.exists() and p.is_dir():
         return str(p)
     return None
+
+
+def _resolve_path_candidates(path_value: str, *, must_exist: bool, label: str) -> Path:
+    raw = str(path_value).strip()
+    if not raw:
+        if must_exist:
+            raise RuntimeError(f"GroundingDINO {label} path is empty")
+        return Path(".")
+
+    p = Path(raw).expanduser()
+    candidates: List[Path] = []
+    if p.is_absolute():
+        candidates.append(p)
+    else:
+        candidates.extend([
+            PROJECT_ROOT / p,
+            Path.cwd() / p,
+            PROJECT_ROOT.parent / p,
+            Path.home() / "Desktop" / p,
+        ])
+
+    seen = set()
+    ordered: List[Path] = []
+    for cand in candidates:
+        key = str(cand).lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        ordered.append(cand)
+
+    for cand in ordered:
+        if cand.exists():
+            return cand.resolve()
+
+    if must_exist:
+        attempted = "\n".join(f"- {str(c)}" for c in ordered)
+        raise RuntimeError(
+            f"GroundingDINO {label} not found: {path_value}\n"
+            f"Attempted locations:\n{attempted}"
+        )
+
+    return ordered[0].resolve() if ordered else p
 
 
 def _resolve_conda_exe(configured: Optional[str]) -> str:

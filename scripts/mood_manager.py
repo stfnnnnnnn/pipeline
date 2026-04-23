@@ -1,4 +1,3 @@
-import torch
 from pathlib import Path
 import logging
 
@@ -14,28 +13,24 @@ class MoodStyleManager:
         
         # Registry mapping UI dropdown names to trigger words and file paths
         self.mood_registry = {
-            "Warm Sunny Day": {
-                "trigger": "mdply_warm_sunny",
-                "path": "models/loras/warm_sunny/pytorch_lora_weights.safetensors"
-            },
             "Neo Tokyo Neon": {
                 "trigger": "mdply_neo_tokyo",
                 "path": "models/loras/neo_tokyo/pytorch_lora_weights.safetensors"
             },
-            "Sunday Blues": {
-                "trigger": "mdply_sunday_blues",
-                "path": "models/loras/sunday_blues/pytorch_lora_weights.safetensors"
-            },
             "Neutral Realistic": {
                 "trigger": "mdply_neutral_real",
-                "path": "models/loras/neutral_real/pytorch_lora_weights.safetensors"
+                "path": "models/loras/neutral_realistic/pytorch_lora_weights.safetensors"
+            },
+            "Warm Sunny Day": {
+                "trigger": "mdply_warm_sunny",
+                "path": "models/loras/warm_sunny/pytorch_lora_weights.safetensors"
             }
         }
 
     def load_mood(self, mood_selection: str):
         """Swaps the LoRA dynamically based on user selection."""
         if mood_selection not in self.mood_registry:
-            logging.warning(f"Mood '{mood_selection}' not found. Defaulting to base model.")
+            logging.warning("Mood '%s' not found. Defaulting to base model.", mood_selection)
             self.unload_mood()
             return
 
@@ -50,7 +45,7 @@ class MoodStyleManager:
         if not lora_path.exists():
             raise FileNotFoundError(f"LoRA weights missing at {lora_path}")
 
-        logging.info(f"Loading Global Mood Template: {mood_selection}")
+        logging.info("Loading Global Mood Template: %s", mood_selection)
         self.pipeline.load_lora_weights(str(lora_path))
         self.current_mood = mood_selection
 
